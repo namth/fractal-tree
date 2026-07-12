@@ -1145,12 +1145,31 @@ class BarnsleyFern {
       // Cascading overall size reduction per level for final leaves
       let leafScale = Math.pow(0.72, currentLevel - 1);
       
+      // Generate deterministic variation based on startX and startY
+      let leafHash = (Math.abs(Math.sin(startX * 12.9898 + startY * 78.233)) * 43758.5453) % 1;
+      let leafHash2 = (Math.abs(Math.sin(startX * 73.987 + startY * 12.45)) * 98765.4321) % 1;
+      let leafHash3 = (Math.abs(Math.sin(startX * 19.345 + startY * 56.78)) * 54321.0987) % 1;
+      let leafHash4 = (Math.abs(Math.sin(startX * 87.654 + startY * 34.21)) * 67890.1234) % 1;
+
+      // 1. Angle offset: e.g. ±12 degrees * treeVariation
+      let angleOffset = (leafHash - 0.5) * radians(24) * this.treeVariation;
+      
+      // 2. Length scale: e.g. from 0.8 to 1.2 * treeVariation
+      let finalBranchLen = branchLen * (1.0 + (leafHash2 - 0.5) * 0.4 * this.treeVariation);
+      
+      // 3. Width scale: e.g. from 0.8 to 1.2 * treeVariation
+      let finalWidthScale = widthScale * (1.0 + (leafHash3 - 0.5) * 0.4 * this.treeVariation);
+
+      // 4. Position offset: e.g. ±2px * treeVariation
+      let posX = startX + (leafHash4 - 0.5) * 4 * this.treeVariation;
+      let posY = startY + (leafHash2 - 0.5) * 4 * this.treeVariation;
+
       if (maxLevel <= 2) {
-        this.drawSegmentedLeaf(startX, startY, branchAngle, branchLen, pColor, ratio, widthScale * levelWidthScale * leafScale);
+        this.drawSegmentedLeaf(posX, posY, branchAngle + angleOffset, finalBranchLen, pColor, ratio, finalWidthScale * levelWidthScale * leafScale);
       } else {
-        let w = branchLen * ratio * widthScale * levelWidthScale * leafScale;
-        let h = branchLen * leafScale;
-        this.drawSoftPointedLeaf(startX, startY, branchAngle, w, h, pColor);
+        let w = finalBranchLen * ratio * finalWidthScale * levelWidthScale * leafScale;
+        let h = finalBranchLen * leafScale;
+        this.drawSoftPointedLeaf(posX, posY, branchAngle + angleOffset, w, h, pColor);
       }
       return;
     }
@@ -1200,15 +1219,28 @@ class BarnsleyFern {
       
       // Left branch position at uL
       let uL = m / M;
-      let xL = startX + uL * branchLen * sin(branchAngle);
-      let yL = startY - uL * branchLen * cos(branchAngle);
-      let subLenL = branchLen * 1.15 * Math.pow(uL, 0.4) * Math.pow(1.0 - uL, 1.3);
+      
+      // Deterministic hashes for Left branch variations
+      let hashL = (Math.abs(Math.sin(startX * 11.1 + startY * 22.2 + currentLevel * 33.3 + m * 44.4)) * 1000) % 1;
+      let hashL2 = (Math.abs(Math.sin(startX * 55.5 + startY * 66.6 + currentLevel * 77.7 + m * 88.8)) * 1000) % 1;
+      let hashL3 = (Math.abs(Math.sin(startX * 99.9 + startY * 11.1 + currentLevel * 22.2 + m * 33.3)) * 1000) % 1;
+      
+      let uL_var = uL + (hashL - 0.5) * 0.08 * this.treeVariation;
+      uL_var = constrain(uL_var, 0.05, 0.95);
+      
+      let xL = startX + uL_var * branchLen * sin(branchAngle);
+      let yL = startY - uL_var * branchLen * cos(branchAngle);
+      
+      let subLenL = branchLen * 1.15 * Math.pow(uL_var, 0.4) * Math.pow(1.0 - uL_var, 1.3);
+      subLenL *= (1.0 + (hashL2 - 0.5) * 0.25 * this.treeVariation);
       
       if (subLenL >= 0.6) {
-        let childWidthScaleL = widthScale * (1.0 - uL * 0.55);
-        let subBranchAngleL = map(uL, 0, 1, radians(baseAng), radians(tipAng));
-        let subThickL = max(0.3, baseThickness * 0.4 * (1.0 - 0.4 * uL));
-        this.drawFernBranch(xL, yL, branchAngle - subBranchAngleL, subLenL, subThickL, currentLevel + 1, maxLevel, pColor, childWidthScaleL, childPairsL);
+        let childWidthScaleL = widthScale * (1.0 - uL_var * 0.55);
+        let subBranchAngleL = map(uL_var, 0, 1, radians(baseAng), radians(tipAng));
+        let angleDevL = (hashL3 - 0.5) * radians(15) * this.treeVariation;
+        
+        let subThickL = max(0.3, baseThickness * 0.4 * (1.0 - 0.4 * uL_var));
+        this.drawFernBranch(xL, yL, branchAngle - (subBranchAngleL + angleDevL), subLenL, subThickL, currentLevel + 1, maxLevel, pColor, childWidthScaleL, childPairsL);
       }
       
       // Calculate child pairs for right branch based on distance to tip (using float index m + 0.5 * altFactor)
@@ -1221,15 +1253,28 @@ class BarnsleyFern {
       
       // Right branch position at uR (shifted forward by half step based on altFactor)
       let uR = (m + 0.5 * altFactor) / M;
-      let xR = startX + uR * branchLen * sin(branchAngle);
-      let yR = startY - uR * branchLen * cos(branchAngle);
-      let subLenR = branchLen * 1.15 * Math.pow(uR, 0.4) * Math.pow(1.0 - uR, 1.3);
+      
+      // Deterministic hashes for Right branch variations
+      let hashR = (Math.abs(Math.sin(startX * 12.3 + startY * 34.5 + currentLevel * 56.7 + m * 78.9)) * 1000) % 1;
+      let hashR2 = (Math.abs(Math.sin(startX * 90.1 + startY * 23.4 + currentLevel * 45.6 + m * 67.8)) * 1000) % 1;
+      let hashR3 = (Math.abs(Math.sin(startX * 34.5 + startY * 56.7 + currentLevel * 78.9 + m * 90.1)) * 1000) % 1;
+      
+      let uR_var = uR + (hashR - 0.5) * 0.08 * this.treeVariation;
+      uR_var = constrain(uR_var, 0.05, 0.95);
+      
+      let xR = startX + uR_var * branchLen * sin(branchAngle);
+      let yR = startY - uR_var * branchLen * cos(branchAngle);
+      
+      let subLenR = branchLen * 1.15 * Math.pow(uR_var, 0.4) * Math.pow(1.0 - uR_var, 1.3);
+      subLenR *= (1.0 + (hashR2 - 0.5) * 0.25 * this.treeVariation);
       
       if (subLenR >= 0.6) {
-        let childWidthScaleR = widthScale * (1.0 - uR * 0.55);
-        let subBranchAngleR = map(uR, 0, 1, radians(baseAng), radians(tipAng));
-        let subThickR = max(0.3, baseThickness * 0.4 * (1.0 - 0.4 * uR));
-        this.drawFernBranch(xR, yR, branchAngle + subBranchAngleR, subLenR, subThickR, currentLevel + 1, maxLevel, pColor, childWidthScaleR, childPairsR);
+        let childWidthScaleR = widthScale * (1.0 - uR_var * 0.55);
+        let subBranchAngleR = map(uR_var, 0, 1, radians(baseAng), radians(tipAng));
+        let angleDevR = (hashR3 - 0.5) * radians(15) * this.treeVariation;
+        
+        let subThickR = max(0.3, baseThickness * 0.4 * (1.0 - 0.4 * uR_var));
+        this.drawFernBranch(xR, yR, branchAngle + (subBranchAngleR + angleDevR), subLenR, subThickR, currentLevel + 1, maxLevel, pColor, childWidthScaleR, childPairsR);
       }
     }
   }
@@ -1679,6 +1724,29 @@ function drawLeafAtTip(branchId, isTerminal = false, depth = 0) {
   
   // Helper to draw a single leaf of the selected type
   let drawSingleLeafShape = (bId) => {
+    // Generate deterministic hashes for variation based on bId
+    let h1 = (Math.abs(Math.sin(bId * 43.123 + 93.71)) * 12345.6789) % 1;
+    let h2 = (Math.abs(Math.sin(bId * 73.987 + 12.45)) * 98765.4321) % 1;
+    let h3 = (Math.abs(Math.sin(bId * 19.345 + 56.78)) * 54321.0987) % 1;
+    let h4 = (Math.abs(Math.sin(bId * 87.654 + 34.21)) * 67890.1234) % 1;
+
+    // 1. Length scale variation: from 0.75 to 1.25
+    let lengthScale = 0.75 + h1 * 0.5 * treeVariation; 
+    if (treeVariation === 0) lengthScale = 1.0;
+    // 2. Width scale variation: from 0.75 to 1.25
+    let widthScale = 0.75 + h2 * 0.5 * treeVariation;
+    if (treeVariation === 0) widthScale = 1.0;
+    // 3. Rotation/tilt variation (angle offset): ±15 degrees * treeVariation
+    let rotOffset = radians((h3 - 0.5) * 30 * treeVariation);
+    // 4. Position offset (small deviation in X, Y): ±2px * treeVariation
+    let posX = (h4 - 0.5) * 4 * treeVariation;
+    let posY = (h1 - 0.5) * 4 * treeVariation;
+
+    push();
+    translate(posX, posY);
+    rotate(rotOffset);
+    scale(widthScale, lengthScale);
+
     setLeafFillColor(bId);
     switch(leafType) {
       case 'sakura':
@@ -1707,6 +1775,7 @@ function drawLeafAtTip(branchId, isTerminal = false, depth = 0) {
         ellipse(0, -6, 7, 14);
         break;
     }
+    pop();
   };
 
   // Determine leaf count at this tip: randomly 1 to 3 leaves
@@ -1784,21 +1853,48 @@ function drawSproutLeaves(branchId, leftAngle, rightAngle, midAngle = 0) {
   
   // Left leaf (pointed in direction of left child branch)
   push();
-  rotate(leftAngle);
+  let h_L = (Math.abs(Math.sin(branchId * 15.3 + 92.1)) * 1000) % 1;
+  let w_L = (Math.abs(Math.sin(branchId * 24.5 + 11.4)) * 1000) % 1;
+  let r_L = (Math.abs(Math.sin(branchId * 37.8 + 53.2)) * 1000) % 1;
+  let rotateOffset_L = radians((r_L - 0.5) * 15 * treeVariation);
+  let lenScale_L = 0.8 + h_L * 0.4 * treeVariation;
+  let widthScale_L = 0.8 + w_L * 0.4 * treeVariation;
+  if (treeVariation === 0) { lenScale_L = 1.0; widthScale_L = 1.0; }
+  
+  rotate(leftAngle + rotateOffset_L);
+  scale(widthScale_L, lenScale_L);
   setLeafFillColor(branchId * 3 + 2);
   ellipse(0, -6, 6, 12);
   pop();
   
   // Middle leaf (pointed straight along the branch)
   push();
-  rotate(midAngle);
+  let h_M = (Math.abs(Math.sin(branchId * 19.8 + 45.6)) * 1000) % 1;
+  let w_M = (Math.abs(Math.sin(branchId * 31.2 + 88.9)) * 1000) % 1;
+  let r_M = (Math.abs(Math.sin(branchId * 54.1 + 12.3)) * 1000) % 1;
+  let rotateOffset_M = radians((r_M - 0.5) * 15 * treeVariation);
+  let lenScale_M = 0.8 + h_M * 0.4 * treeVariation;
+  let widthScale_M = 0.8 + w_M * 0.4 * treeVariation;
+  if (treeVariation === 0) { lenScale_M = 1.0; widthScale_M = 1.0; }
+  
+  rotate(midAngle + rotateOffset_M);
+  scale(widthScale_M, lenScale_M);
   setLeafFillColor(branchId * 3 + 1);
   ellipse(0, -6, 6, 12);
   pop();
   
   // Right leaf (pointed in direction of right child branch)
   push();
-  rotate(rightAngle);
+  let h_R = (Math.abs(Math.sin(branchId * 29.3 + 72.8)) * 1000) % 1;
+  let w_R = (Math.abs(Math.sin(branchId * 41.6 + 5.7)) * 1000) % 1;
+  let r_R = (Math.abs(Math.sin(branchId * 63.4 + 14.8)) * 1000) % 1;
+  let rotateOffset_R = radians((r_R - 0.5) * 15 * treeVariation);
+  let lenScale_R = 0.8 + h_R * 0.4 * treeVariation;
+  let widthScale_R = 0.8 + w_R * 0.4 * treeVariation;
+  if (treeVariation === 0) { lenScale_R = 1.0; widthScale_R = 1.0; }
+  
+  rotate(rightAngle + rotateOffset_R);
+  scale(widthScale_R, lenScale_R);
   setLeafFillColor(branchId * 3);
   ellipse(0, -6, 6, 12);
   pop();
@@ -1807,8 +1903,21 @@ function drawSproutLeaves(branchId, leftAngle, rightAngle, midAngle = 0) {
 // Draw a single falling leaf
 function drawSingleLeaf(branchId, scaleVal) {
   noStroke();
+  
+  let h = (Math.abs(Math.sin(branchId * 43.123 + 93.71)) * 1000) % 1;
+  let w = (Math.abs(Math.sin(branchId * 73.987 + 12.45)) * 1000) % 1;
+  let r = (Math.abs(Math.sin(branchId * 19.345 + 56.78)) * 1000) % 1;
+  let rotateOffset = radians((r - 0.5) * 20 * treeVariation);
+  let lenScale = (0.8 + h * 0.4 * treeVariation) * scaleVal;
+  let widthScale = (0.8 + w * 0.4 * treeVariation) * scaleVal;
+  if (treeVariation === 0) { lenScale = scaleVal; widthScale = scaleVal; }
+
+  push();
+  rotate(rotateOffset);
+  scale(widthScale, lenScale);
   setLeafFillColor(branchId);
-  ellipse(0, -4, 6 * scaleVal, 12 * scaleVal);
+  ellipse(0, -4, 6, 12);
+  pop();
 }
 
 // Helper to set leaf fill color based on type and branch ID
