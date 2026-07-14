@@ -1438,7 +1438,7 @@ class BarnsleyFern {
       // Sweep angle: 90 degrees at base down to 8 degrees at tip (relative to main stem)
       let angleBase = 90.0;
       let angleTip = 8.0;
-      let currentBranchAngleL = map(tL, 0, 1, radians(angleBase), radians(tipAng || radians(8.0)));
+      let currentBranchAngleL = map(tL, 0, 1, radians(angleBase), radians(angleTip));
       
       // Left leaflet size and thickness
       let maxLen = h * (this.fernLeafletLength / 100.0);
@@ -1469,7 +1469,7 @@ class BarnsleyFern {
         let pColorR = lerpColor(colStart, colEnd, tR);
         pColorR.setAlpha(0.85);
         
-        let currentBranchAngleR = map(tR, 0, 1, radians(angleBase), radians(tipAng || radians(8.0)));
+        let currentBranchAngleR = map(tR, 0, 1, radians(angleBase), radians(angleTip));
         let leafletLenR = maxLen * Math.pow(tR, 0.45) * Math.pow(1.0 - tR, this.fernTaperProfile);
         let lenVarR = (noise(treeSeed + (k + 0.5 * altFrac) * 14.3 + i * 7.2) - 0.5) * 0.22;
         leafletLenR *= (1.0 + lenVarR);
