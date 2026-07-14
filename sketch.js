@@ -1520,8 +1520,12 @@ class BarnsleyFern {
         break;
     }
     
-    // Draw a short organic trunk (thân ngắn) emerging from the ground
-    let trunkLength = this.initLength * 0.12; // Short trunk (12% of main leaf length)
+    // Draw a short organic trunk (thân ngắn) emerging from the ground with random height based on treeSeed
+    let trunkHash = (Math.abs(Math.sin(treeSeed * 53.7 + 12.9)) * 1000) % 1;
+    // 25% chance of no trunk (0 height), otherwise random height between 0 and 12% of main leaf length
+    let trunkHeightFactor = trunkHash < 0.25 ? 0 : map(trunkHash, 0.25, 1.0, 0, 1.0);
+    let trunkLength = this.initLength * 0.12 * trunkHeightFactor;
+    
     let N = 5;
     let step = trunkLength / N;
     let curX = 0;
@@ -1546,46 +1550,48 @@ class BarnsleyFern {
     // Base scale of the leaf sheaths (bẹ lá) is initThickness * 1.3 * 5.5
     let sheathBaseScale = this.initThickness * 1.3 * 5.5;
     
-    // Draw the trunk segments as beautifully curved filled quads (to ở gốc, thon ở đỉnh)
-    noStroke();
-    for (let k = 0; k < N; k++) {
-      let pt1 = trunkPoints[k];
-      let pt2 = trunkPoints[k + 1];
-      if (!pt2) break;
-      
-      let t1 = pt1.t;
-      let t2 = pt2.t;
-      
-      // Trunk base is 1.25x the sheath scale, tapering smoothly to 0.85x at the top (where all sheaths join)
-      let w1 = sheathBaseScale * (1.25 - 0.40 * Math.pow(t1, 1.5)) / 2;
-      let w2 = sheathBaseScale * (1.25 - 0.40 * Math.pow(t2, 1.5)) / 2;
-      
-      let nx1 = cos(pt1.angle), ny1 = sin(pt1.angle);
-      let nx2 = cos(pt2.angle), ny2 = sin(pt2.angle);
-      
-      let x1_L = pt1.x - w1 * nx1, y1_L = pt1.y - w1 * ny1;
-      let x1_R = pt1.x + w1 * nx1, y1_R = pt1.y + w1 * ny1;
-      
-      let x2_L = pt2.x - w2 * nx2, y2_L = pt2.y - w2 * ny2;
-      let x2_R = pt2.x + w2 * nx2, y2_R = pt2.y + w2 * ny2;
-      
-      // Color is blended closer to the leaf color theme for better harmony (gần tương đồng với màu lá)
-      let trunkCol = lerpColor(colStart, colEnd, 0.15);
-      trunkCol.setAlpha(0.92);
-      fill(trunkCol);
-      
-      // Extremely subtle, faint outline blended with the trunk color for minimal visibility (mờ nhạt hơn)
-      let outlineCol = lerpColor(trunkCol, colEnd, 0.1);
-      outlineCol.setAlpha(0.08); // Only 8% opacity
-      stroke(outlineCol);
-      strokeWeight(0.8);
-      
-      beginShape();
-      vertex(x1_L, y1_L);
-      vertex(x2_L, y2_L);
-      vertex(x2_R, y2_R);
-      vertex(x1_R, y1_R);
-      endShape(CLOSE);
+    // Draw the trunk segments as beautifully curved filled quads (to ở gốc, thon ở đỉnh) if trunkLength > 0
+    if (trunkLength > 0) {
+      noStroke();
+      for (let k = 0; k < N; k++) {
+        let pt1 = trunkPoints[k];
+        let pt2 = trunkPoints[k + 1];
+        if (!pt2) break;
+        
+        let t1 = pt1.t;
+        let t2 = pt2.t;
+        
+        // Trunk base is 1.25x the sheath scale, tapering smoothly to 0.85x at the top (where all sheaths join)
+        let w1 = sheathBaseScale * (1.25 - 0.40 * Math.pow(t1, 1.5)) / 2;
+        let w2 = sheathBaseScale * (1.25 - 0.40 * Math.pow(t2, 1.5)) / 2;
+        
+        let nx1 = cos(pt1.angle), ny1 = sin(pt1.angle);
+        let nx2 = cos(pt2.angle), ny2 = sin(pt2.angle);
+        
+        let x1_L = pt1.x - w1 * nx1, y1_L = pt1.y - w1 * ny1;
+        let x1_R = pt1.x + w1 * nx1, y1_R = pt1.y + w1 * ny1;
+        
+        let x2_L = pt2.x - w2 * nx2, y2_L = pt2.y - w2 * ny2;
+        let x2_R = pt2.x + w2 * nx2, y2_R = pt2.y + w2 * ny2;
+        
+        // Color is blended closer to the leaf color theme for better harmony (gần tương đồng với màu lá)
+        let trunkCol = lerpColor(colStart, colEnd, 0.15);
+        trunkCol.setAlpha(0.92);
+        fill(trunkCol);
+        
+        // Extremely subtle, faint outline blended with the trunk color for minimal visibility (mờ nhạt hơn)
+        let outlineCol = lerpColor(trunkCol, colEnd, 0.1);
+        outlineCol.setAlpha(0.08); // Only 8% opacity
+        stroke(outlineCol);
+        strokeWeight(0.8);
+        
+        beginShape();
+        vertex(x1_L, y1_L);
+        vertex(x2_L, y2_L);
+        vertex(x2_R, y2_R);
+        vertex(x1_R, y1_R);
+        endShape(CLOSE);
+      }
     }
     
     // Draw a rounded cap at the top of the trunk (bo tròn chóp đỉnh)
