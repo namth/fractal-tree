@@ -1380,9 +1380,20 @@ class BarnsleyFern {
       let x2_L = pt2.x - w2 * nx2, y2_L = pt2.y - w2 * ny2;
       let x2_R = pt2.x + w2 * nx2, y2_R = pt2.y + w2 * ny2;
       
-      let pColor = lerpColor(colStart, colEnd, t1);
+      // Shift sheath colors to be lighter, more similar to the main leaves (gần tương đồng với màu lá)
+      let tColor = t1;
+      if (t1 < transitionLimit) {
+        tColor = map(t1, 0, transitionLimit, 0.25, 0.45);
+      }
+      let pColor = lerpColor(colStart, colEnd, tColor);
       pColor.setAlpha(0.9); // solid and clean
       fill(pColor);
+      
+      // Add a subtle light outline to the leaf sheath for better visibility and definition
+      let outlineCol = color(red(colEnd), green(colEnd), blue(colEnd));
+      outlineCol.setAlpha(0.4);
+      stroke(outlineCol);
+      strokeWeight(0.8);
       
       beginShape();
       vertex(x1_L, y1_L);
@@ -1557,10 +1568,16 @@ class BarnsleyFern {
       let x2_L = pt2.x - w2 * nx2, y2_L = pt2.y - w2 * ny2;
       let x2_R = pt2.x + w2 * nx2, y2_R = pt2.y + w2 * ny2;
       
-      // Color is a very dark, organic wood/bark color blended with the leaf theme
-      let trunkCol = lerpColor(colStart, color(10, 8, 6), 0.65);
-      trunkCol.setAlpha(0.95);
+      // Color is blended closer to the leaf color theme for better harmony (gần tương đồng với màu lá)
+      let trunkCol = lerpColor(colStart, colEnd, 0.15);
+      trunkCol.setAlpha(0.92);
       fill(trunkCol);
+      
+      // Light-colored outline matching the leaf color for better visibility and definition
+      let outlineCol = color(red(colEnd), green(colEnd), blue(colEnd));
+      outlineCol.setAlpha(0.55);
+      stroke(outlineCol);
+      strokeWeight(1.5);
       
       beginShape();
       vertex(x1_L, y1_L);
