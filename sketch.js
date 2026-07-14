@@ -1342,7 +1342,13 @@ class BarnsleyFern {
     let countToDrawDetailed = Math.floor(M * p);
     noStroke();
     
-    let transitionLimit = 0.22; // Leaf sheath occupies a fixed 22% of frond length
+    let transitionLimit = 0.22; // Default leaf sheath occupies a fixed 22% of frond length
+    if (this.maxDepth === 0) {
+      // If maxDepth is 0, make transitionLimit proportional to currentTrunkHeightFactor (gốc ngắn bẹ ngắn, gốc dài bẹ dài)
+      let factor = this.currentTrunkHeightFactor !== undefined ? this.currentTrunkHeightFactor : 1.0;
+      // Ranges from 0.08 (when trunk is 0 height) to 0.26 (when trunk is max height)
+      transitionLimit = map(factor, 0, 1, 0.08, 0.26);
+    }
     
     for (let k = 0; k < countToDrawDetailed; k++) {
       let pt1 = spinePoints[k];
@@ -1553,6 +1559,7 @@ class BarnsleyFern {
     let trunkHash = (Math.abs(Math.sin(treeSeed * 53.7 + 12.9)) * 1000) % 1;
     // 25% chance of no trunk (0 height), otherwise random height between 0 and 12% of main leaf length
     let trunkHeightFactor = trunkHash < 0.25 ? 0 : map(trunkHash, 0.25, 1.0, 0, 1.0);
+    this.currentTrunkHeightFactor = trunkHeightFactor;
     let trunkLength = this.initLength * 0.12 * trunkHeightFactor;
     
     // N segments for the trunk base (keep it small, e.g. 3 if short, 5 if long, no need for 60)
