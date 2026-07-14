@@ -1292,12 +1292,103 @@ class BarnsleyFern {
     
     let h = this.initLength * heightFactor;
     
-    // If maxDepth is 0, draw the entire frond as a single segmented leaf!
+    // If maxDepth is 0, draw the entire frond as a single segmented leaf with a bulging concave sheath at its base!
     if (this.maxDepth === 0) {
       let pColor = lerpColor(colStart, colEnd, 0.5);
       pColor.setAlpha(0.9);
       let leafWidthFactor = this.fernLeafletWidth / 100.0;
-      this.drawSegmentedLeaf(0, 0, baseAngle, h * p, pColor, 0.11 * leafWidthFactor, 1.0);
+      
+      // Calculate wind sway parameters
+      let frondPhase = time * 3.4 + i * 0.08;
+      let activeWind = windStrength * (1.0 + 2.0 * (noise(treeSeed + i * 15.3 + time * 0.4) - 0.5));
+      let baseSway = sin(frondPhase) * (activeWind * 0.075);
+      let spineCurvature = radians(12.0 / 8) * (noise(treeSeed + i * 19.8) - 0.5);
+      
+      let transitionLimit = 0.22;
+      let totalLen = h * p;
+      let sheathLen = totalLen * transitionLimit;
+      
+      // Generate sheath spine points (15 detailed segments)
+      let M_sheath = 15;
+      let sheathPoints = [];
+      let curX = 0;
+      let curY = 0;
+      let curAngle = baseAngle;
+      let stepLenSheath = sheathLen / M_sheath;
+      
+      for (let k = 0; k <= M_sheath; k++) {
+        let t = (k / M_sheath) * transitionLimit; // goes from 0 to transitionLimit
+        let bendingFactor = 1.0 + 12.5 * Math.pow(t, 2.4);
+        let currentAngle = curAngle + baseSway * bendingFactor;
+        
+        sheathPoints.push({
+          x: curX,
+          y: curY,
+          angle: currentAngle,
+          t: t
+        });
+        
+        curX += stepLenSheath * sin(currentAngle);
+        curY -= stepLenSheath * cos(currentAngle);
+        curAngle += spineCurvature * (transitionLimit / M_sheath);
+      }
+      
+      // Draw the bulging sheath segments
+      noStroke();
+      for (let k = 0; k < M_sheath; k++) {
+        let pt1 = sheathPoints[k];
+        let pt2 = sheathPoints[k + 1];
+        if (!pt2) break;
+        
+        let t1 = pt1.t;
+        let t2 = pt2.t;
+        
+        // Concave bulge profile matching other levels
+        let bulge1 = 1.0 + (6.5 - 1.0) * Math.pow(1.0 - (t1 / transitionLimit), 3.5);
+        let bulge2 = 1.0 + (6.5 - 1.0) * Math.pow(1.0 - (t2 / transitionLimit), 3.5);
+        
+        let thick1 = max(0.2, this.initThickness * 1.3 * Math.pow(1.0 - t1, 1.25) * bulge1);
+        let thick2 = max(0.2, this.initThickness * 1.3 * Math.pow(1.0 - t2, 1.25) * bulge2);
+        
+        let w1 = thick1 / 2;
+        let w2 = thick2 / 2;
+        
+        let nx1 = cos(pt1.angle), ny1 = sin(pt1.angle);
+        let nx2 = cos(pt2.angle), ny2 = sin(pt2.angle);
+        
+        let x1_L = pt1.x - w1 * nx1, y1_L = pt1.y - w1 * ny1;
+        let x1_R = pt1.x + w1 * nx1, y1_R = pt1.y + w1 * ny1;
+        let x2_L = pt2.x - w2 * nx2, y2_L = pt2.y - w2 * ny2;
+        let x2_R = pt2.x + w2 * nx2, y2_R = pt2.y + w2 * ny2;
+        
+        // Color & outline
+        let tColor = map(t1, 0, transitionLimit, 0.25, 0.45);
+        let pColorSheath = lerpColor(colStart, colEnd, tColor);
+        pColorSheath.setAlpha(0.9);
+        fill(pColorSheath);
+        
+        let outlineCol = color(red(colEnd), green(colEnd), blue(colEnd));
+        outlineCol.setAlpha(0.15);
+        stroke(outlineCol);
+        strokeWeight(0.5);
+        
+        beginShape();
+        vertex(x1_L, y1_L);
+        vertex(x2_L, y2_L);
+        vertex(x2_R, y2_R);
+        vertex(x1_R, y1_R);
+        endShape(CLOSE);
+      }
+      
+      // Reset stroke for drawing the leaf blade
+      noStroke();
+      
+      // Draw the segmented leaf blade starting from the top of the sheath
+      let lastPt = sheathPoints[M_sheath];
+      let remainingLen = totalLen * (1.0 - transitionLimit);
+      if (remainingLen > 2.0) {
+        this.drawSegmentedLeaf(lastPt.x, lastPt.y, lastPt.angle, remainingLen, pColor, 0.11 * leafWidthFactor, 1.0);
+      }
       return;
     }
     
