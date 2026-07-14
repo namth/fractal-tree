@@ -1125,8 +1125,9 @@ class BarnsleyFern {
     }
   }
 
-  drawFernBranch(startX, startY, branchAngle, branchLen, baseThickness, currentLevel, maxLevel, pColor, widthScale, overridePairs) {
+  drawFernBranch(startX, startY, branchAngle, branchLen, baseThickness, currentLevel, maxLevel, pColor, widthScale, overridePairs, bId) {
     if (widthScale === undefined) widthScale = 1.0;
+    if (bId === undefined) bId = 1;
     
     // Early culling: skip drawing and recursing if the branch is too microscopic
     if (branchLen < 0.8) return;
@@ -1145,11 +1146,11 @@ class BarnsleyFern {
       // Cascading overall size reduction per level for final leaves
       let leafScale = Math.pow(0.72, currentLevel - 1);
       
-      // Generate deterministic variation based on startX and startY
-      let leafHash = (Math.abs(Math.sin(startX * 12.9898 + startY * 78.233)) * 43758.5453) % 1;
-      let leafHash2 = (Math.abs(Math.sin(startX * 73.987 + startY * 12.45)) * 98765.4321) % 1;
-      let leafHash3 = (Math.abs(Math.sin(startX * 19.345 + startY * 56.78)) * 54321.0987) % 1;
-      let leafHash4 = (Math.abs(Math.sin(startX * 87.654 + startY * 34.21)) * 67890.1234) % 1;
+      // Generate deterministic variation based on bId instead of startX and startY
+      let leafHash = (Math.abs(Math.sin(bId * 12.9898 + 78.233)) * 43758.5453) % 1;
+      let leafHash2 = (Math.abs(Math.sin(bId * 73.987 + 12.45)) * 98765.4321) % 1;
+      let leafHash3 = (Math.abs(Math.sin(bId * 19.345 + 56.78)) * 54321.0987) % 1;
+      let leafHash4 = (Math.abs(Math.sin(bId * 87.654 + 34.21)) * 67890.1234) % 1;
 
       // 1. Angle offset: e.g. ±12 degrees * treeVariation
       let angleOffset = (leafHash - 0.5) * radians(24) * this.treeVariation;
@@ -1220,10 +1221,10 @@ class BarnsleyFern {
       // Left branch position at uL
       let uL = m / M;
       
-      // Deterministic hashes for Left branch variations
-      let hashL = (Math.abs(Math.sin(startX * 11.1 + startY * 22.2 + currentLevel * 33.3 + m * 44.4)) * 1000) % 1;
-      let hashL2 = (Math.abs(Math.sin(startX * 55.5 + startY * 66.6 + currentLevel * 77.7 + m * 88.8)) * 1000) % 1;
-      let hashL3 = (Math.abs(Math.sin(startX * 99.9 + startY * 11.1 + currentLevel * 22.2 + m * 33.3)) * 1000) % 1;
+      // Deterministic hashes for Left branch variations based on bId and m
+      let hashL = (Math.abs(Math.sin(bId * 11.1 + m * 44.4)) * 1000) % 1;
+      let hashL2 = (Math.abs(Math.sin(bId * 55.5 + m * 88.8)) * 1000) % 1;
+      let hashL3 = (Math.abs(Math.sin(bId * 99.9 + m * 33.3)) * 1000) % 1;
       
       let uL_var = uL + (hashL - 0.5) * 0.08 * this.treeVariation;
       uL_var = constrain(uL_var, 0.05, 0.95);
@@ -1240,7 +1241,8 @@ class BarnsleyFern {
         let angleDevL = (hashL3 - 0.5) * radians(15) * this.treeVariation;
         
         let subThickL = max(0.3, baseThickness * 0.4 * (1.0 - 0.4 * uL_var));
-        this.drawFernBranch(xL, yL, branchAngle - (subBranchAngleL + angleDevL), subLenL, subThickL, currentLevel + 1, maxLevel, pColor, childWidthScaleL, childPairsL);
+        let childIdL = bId * 100 + m * 2;
+        this.drawFernBranch(xL, yL, branchAngle - (subBranchAngleL + angleDevL), subLenL, subThickL, currentLevel + 1, maxLevel, pColor, childWidthScaleL, childPairsL, childIdL);
       }
       
       // Calculate child pairs for right branch based on distance to tip (using float index m + 0.5 * altFactor)
@@ -1254,10 +1256,10 @@ class BarnsleyFern {
       // Right branch position at uR (shifted forward by half step based on altFactor)
       let uR = (m + 0.5 * altFactor) / M;
       
-      // Deterministic hashes for Right branch variations
-      let hashR = (Math.abs(Math.sin(startX * 12.3 + startY * 34.5 + currentLevel * 56.7 + m * 78.9)) * 1000) % 1;
-      let hashR2 = (Math.abs(Math.sin(startX * 90.1 + startY * 23.4 + currentLevel * 45.6 + m * 67.8)) * 1000) % 1;
-      let hashR3 = (Math.abs(Math.sin(startX * 34.5 + startY * 56.7 + currentLevel * 78.9 + m * 90.1)) * 1000) % 1;
+      // Deterministic hashes for Right branch variations based on bId and m
+      let hashR = (Math.abs(Math.sin(bId * 12.3 + m * 78.9)) * 1000) % 1;
+      let hashR2 = (Math.abs(Math.sin(bId * 90.1 + m * 67.8)) * 1000) % 1;
+      let hashR3 = (Math.abs(Math.sin(bId * 34.5 + m * 90.1)) * 1000) % 1;
       
       let uR_var = uR + (hashR - 0.5) * 0.08 * this.treeVariation;
       uR_var = constrain(uR_var, 0.05, 0.95);
@@ -1274,7 +1276,8 @@ class BarnsleyFern {
         let angleDevR = (hashR3 - 0.5) * radians(15) * this.treeVariation;
         
         let subThickR = max(0.3, baseThickness * 0.4 * (1.0 - 0.4 * uR_var));
-        this.drawFernBranch(xR, yR, branchAngle + (subBranchAngleR + angleDevR), subLenR, subThickR, currentLevel + 1, maxLevel, pColor, childWidthScaleR, childPairsR);
+        let childIdR = bId * 100 + m * 2 + 1;
+        this.drawFernBranch(xR, yR, branchAngle + (subBranchAngleR + angleDevR), subLenR, subThickR, currentLevel + 1, maxLevel, pColor, childWidthScaleR, childPairsR, childIdR);
       }
     }
   }
@@ -1391,7 +1394,7 @@ class BarnsleyFern {
       if (leafletLenL >= 2.0) {
         let stemThickL = max(0.5, this.initThickness * (1.3 - 1.05 * tL));
         let thetaL = ptL.angle - currentBranchAngleL;
-        this.drawFernBranch(ptL.x, ptL.y, thetaL, leafletLenL, stemThickL, 1, this.maxDepth, pColorL, 1.0, childPairsL);
+        this.drawFernBranch(ptL.x, ptL.y, thetaL, leafletLenL, stemThickL, 1, this.maxDepth, pColorL, 1.0, childPairsL, i * 1000 + k * 2);
       }
       
       // Right leaflet position (shifted forward along the spine based on altFrac)
@@ -1438,7 +1441,7 @@ class BarnsleyFern {
       if (leafletLenR >= 2.0) {
         let stemThickR = max(0.5, this.initThickness * (1.3 - 1.05 * tR));
         let thetaR = ptR.angle + currentBranchAngleR;
-        this.drawFernBranch(ptR.x, ptR.y, thetaR, leafletLenR, stemThickR, 1, this.maxDepth, pColorR, 1.0, childPairsR);
+        this.drawFernBranch(ptR.x, ptR.y, thetaR, leafletLenR, stemThickR, 1, this.maxDepth, pColorR, 1.0, childPairsR, i * 1000 + k * 2 + 1);
       }
     }
   }
