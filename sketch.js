@@ -1436,6 +1436,32 @@ class BarnsleyFern {
     // Reset stroke for the rest of drawing
     noStroke();
     
+    // Draw a center leaf vein (gân lá) for level 0 leaves
+    if (this.maxDepth === 0) {
+      let startIndex = Math.floor(M * transitionLimit);
+      let endIndex = countToDrawDetailed - 1;
+      
+      // Vein color is a brighter/lighter version of the leaf color theme
+      let veinCol = lerpColor(colStart, colEnd, 0.75);
+      veinCol.setAlpha(0.65); // slightly transparent and glowing
+      stroke(veinCol);
+      
+      for (let k = startIndex; k < endIndex; k++) {
+        let pt1 = spinePoints[k];
+        let pt2 = spinePoints[k + 1];
+        if (!pt2) break;
+        
+        let t1 = pt1.t;
+        // Taper vein thickness from 1.5px at base to 0.4px at tip
+        let u = (t1 - transitionLimit) / (1.0 - transitionLimit);
+        let veinThick = map(u, 0, 1, 1.5, 0.4);
+        strokeWeight(veinThick);
+        
+        line(pt1.x, pt1.y, pt2.x, pt2.y);
+      }
+      noStroke(); // reset stroke
+    }
+    
     // 3. Draw the leaflets (pinnae) branching out from the spine at precise mapped coordinates (only if maxDepth > 0)
     if (this.maxDepth > 0) {
       // Helper function to dynamically interpolate spine points at any continuous t value
