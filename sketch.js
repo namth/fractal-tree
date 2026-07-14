@@ -39,7 +39,7 @@ let paramState = {
     growthSpeed: 1.0
   },
   'barnsley-fern': {
-    initLength: 320,
+    initLength: 640,
     initThickness: 4,
     maxDepth: 3,
     treeVariation: 0.15,
@@ -112,9 +112,9 @@ function loadParamsToUI(type) {
   // Set element values in UI dynamically configuring initLength limits
   if (elements.initLength) {
     if (type === 'barnsley-fern') {
-      elements.initLength.min = "250";
-      elements.initLength.max = "450";
-      elements.initLength.step = "5";
+      elements.initLength.min = "300";
+      elements.initLength.max = "900";
+      elements.initLength.step = "10";
     } else {
       elements.initLength.min = "150";
       elements.initLength.max = "300";
@@ -2256,7 +2256,7 @@ function randomizeSettings() {
   
   if (treeType === 'barnsley-fern') {
     // Fern specific random bounds
-    elements.initLength.value = round(random(270, 420));
+    elements.initLength.value = round(random(540, 840));
     elements.initThickness.value = round(random(2, 6)); // thin stem/leaflet thickness
     elements.maxDepth.value = round(random(0, 4));
     elements.treeVariation.value = parseFloat(random(0.02, 0.25).toFixed(2));
@@ -2316,7 +2316,7 @@ function resetSettings() {
   treeSeed = 42; // Set standard deterministic seed for default tree
   
   if (treeType === 'barnsley-fern') {
-    elements.initLength.value = 320;
+    elements.initLength.value = 640;
     elements.initThickness.value = 4;
     elements.maxDepth.value = 3;
     elements.treeVariation.value = 0.15;
