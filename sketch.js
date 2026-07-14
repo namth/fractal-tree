@@ -1338,23 +1338,58 @@ class BarnsleyFern {
       curAngle += spineCurvature;
     }
     
-    // 2. Draw the spine stem
-    noFill();
+    // 2. Draw the spine stem using seamless filled quads to create a beautiful bulging leaf sheath (bẹ lá) at the base
+    noStroke();
     for (let k = 0; k < countToDraw; k++) {
       let pt1 = spinePoints[k];
       let pt2 = spinePoints[k + 1];
       if (!pt2) break;
       
-      let t = pt1.t;
-      let thick = max(0.12, this.initThickness * 1.3 * Math.pow(1.0 - t, 1.25));
-      strokeWeight(thick);
+      let t1 = pt1.t;
+      let t2 = pt2.t;
       
-      let tColor = t;
-      let pColor = lerpColor(colStart, colEnd, tColor);
-      pColor.setAlpha(0.9); // clean and solid
-      stroke(pColor);
+      // Bulge factor to simulate leaf sheaths (bẹ lá) that wrap together at the base
+      let bulge1 = 1.0;
+      let bulge2 = 1.0;
+      let transitionLimit = 0.22; // The leaf sheath occupies the first 22% of the frond length
       
-      line(pt1.x, pt1.y, pt2.x, pt2.y);
+      if (t1 < transitionLimit) {
+        // Swells up to 5.5x base thickness at the very bottom, curving smoothly to 1.0x at transition limit
+        bulge1 = 1.0 + (5.5 - 1.0) * Math.pow(1.0 - (t1 / transitionLimit), 2.5);
+      }
+      if (t2 < transitionLimit) {
+        bulge2 = 1.0 + (5.5 - 1.0) * Math.pow(1.0 - (t2 / transitionLimit), 2.5);
+      }
+      
+      let thick1 = max(0.2, this.initThickness * 1.3 * Math.pow(1.0 - t1, 1.25) * bulge1);
+      let thick2 = max(0.2, this.initThickness * 1.3 * Math.pow(1.0 - t2, 1.25) * bulge2);
+      
+      let w1 = thick1 / 2;
+      let w2 = thick2 / 2;
+      
+      // Perpendicular normal vectors to the spine direction at both joints
+      let nx1 = cos(pt1.angle);
+      let ny1 = sin(pt1.angle);
+      let nx2 = cos(pt2.angle);
+      let ny2 = sin(pt2.angle);
+      
+      // Left and Right boundary points for pt1 and pt2
+      let x1_L = pt1.x - w1 * nx1, y1_L = pt1.y - w1 * ny1;
+      let x1_R = pt1.x + w1 * nx1, y1_R = pt1.y + w1 * ny1;
+      
+      let x2_L = pt2.x - w2 * nx2, y2_L = pt2.y - w2 * ny2;
+      let x2_R = pt2.x + w2 * nx2, y2_R = pt2.y + w2 * ny2;
+      
+      let pColor = lerpColor(colStart, colEnd, t1);
+      pColor.setAlpha(0.9); // solid and clean
+      fill(pColor);
+      
+      beginShape();
+      vertex(x1_L, y1_L);
+      vertex(x2_L, y2_L);
+      vertex(x2_R, y2_R);
+      vertex(x1_R, y1_R);
+      endShape(CLOSE);
     }
     
     // 3. Draw the leaflets (pinnae) branching out from the spine
