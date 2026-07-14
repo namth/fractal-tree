@@ -1339,6 +1339,21 @@ class BarnsleyFern {
     // 2. Draw the spine stem using detailed quads for a beautiful, organic concave leaf sheath (bẹ lá loe hình phễu)
     let countToDrawDetailed = Math.floor(M * p);
     noStroke();
+    
+    // Determine random sheath transition limit (bẹ lá có độ cao ngẫu nhiên) for each frond i
+    let sheathHash = (Math.abs(Math.sin(treeSeed * 73.1 + i * 47.9)) * 1000) % 1;
+    // 25% chance of no sheath (0 height), otherwise random height/limit between 0.05 and 0.25
+    let transitionLimit = sheathHash < 0.25 ? 0 : map(sheathHash, 0.25, 1.0, 0.05, 0.25);
+    
+    // If transitionLimit is 0 (no bulging sheath), draw a small semi-circular attachment cap at the base (0, 0)
+    if (transitionLimit === 0) {
+      let capCol = colStart;
+      capCol.setAlpha(0.9);
+      fill(capCol);
+      noStroke();
+      ellipse(0, 0, this.initThickness * 1.3, this.initThickness * 1.3);
+    }
+    
     for (let k = 0; k < countToDrawDetailed; k++) {
       let pt1 = spinePoints[k];
       let pt2 = spinePoints[k + 1];
@@ -1350,13 +1365,14 @@ class BarnsleyFern {
       // Bulge factor with high exponent (3.5) and 6.5x base thickness for a true flared concave sheath profile (loe dần lõm ở 2 bên)
       let bulge1 = 1.0;
       let bulge2 = 1.0;
-      let transitionLimit = 0.22; // The leaf sheath occupies the first 22% of the frond length
       
-      if (t1 < transitionLimit) {
-        bulge1 = 1.0 + (6.5 - 1.0) * Math.pow(1.0 - (t1 / transitionLimit), 3.5);
-      }
-      if (t2 < transitionLimit) {
-        bulge2 = 1.0 + (6.5 - 1.0) * Math.pow(1.0 - (t2 / transitionLimit), 3.5);
+      if (transitionLimit > 0) {
+        if (t1 < transitionLimit) {
+          bulge1 = 1.0 + (6.5 - 1.0) * Math.pow(1.0 - (t1 / transitionLimit), 3.5);
+        }
+        if (t2 < transitionLimit) {
+          bulge2 = 1.0 + (6.5 - 1.0) * Math.pow(1.0 - (t2 / transitionLimit), 3.5);
+        }
       }
       
       let thick1 = max(0.2, this.initThickness * 1.3 * Math.pow(1.0 - t1, 1.25) * bulge1);
@@ -1387,11 +1403,15 @@ class BarnsleyFern {
       pColor.setAlpha(0.9); // solid and clean
       fill(pColor);
       
-      // Add a very subtle, gentle outline to the leaf sheath segments
-      let outlineCol = color(red(colEnd), green(colEnd), blue(colEnd));
-      outlineCol.setAlpha(0.15); // Low opacity for soft blending
-      stroke(outlineCol);
-      strokeWeight(0.5); // Thinner line
+      // Add a very subtle, gentle outline ONLY to the leaf sheath segments
+      if (transitionLimit > 0 && t1 < transitionLimit) {
+        let outlineCol = color(red(colEnd), green(colEnd), blue(colEnd));
+        outlineCol.setAlpha(0.15); // Low opacity for soft blending
+        stroke(outlineCol);
+        strokeWeight(0.5); // Thinner line
+      } else {
+        noStroke();
+      }
       
       beginShape();
       vertex(x1_L, y1_L);
@@ -1521,12 +1541,8 @@ class BarnsleyFern {
         break;
     }
     
-    // Draw a short organic trunk (thân ngắn) emerging from the ground with random height based on treeSeed
-    let trunkHash = (Math.abs(Math.sin(treeSeed * 53.7 + 12.9)) * 1000) % 1;
-    // 25% chance of no trunk (0 height), otherwise random height between 0 and 12% of main leaf length
-    let trunkHeightFactor = trunkHash < 0.25 ? 0 : map(trunkHash, 0.25, 1.0, 0, 1.0);
-    let trunkLength = this.initLength * 0.12 * trunkHeightFactor;
-    
+    // Draw a short organic trunk (thân ngắn) emerging from the ground
+    let trunkLength = this.initLength * 0.12; // Short trunk (12% of main leaf length)
     let N = 5;
     let step = trunkLength / N;
     let curX = 0;
@@ -1551,48 +1567,46 @@ class BarnsleyFern {
     // Base scale of the leaf sheaths (bẹ lá) is initThickness * 1.3 * 5.5
     let sheathBaseScale = this.initThickness * 1.3 * 5.5;
     
-    // Draw the trunk segments as beautifully curved filled quads (to ở gốc, thon ở đỉnh) if trunkLength > 0
-    if (trunkLength > 0) {
-      noStroke();
-      for (let k = 0; k < N; k++) {
-        let pt1 = trunkPoints[k];
-        let pt2 = trunkPoints[k + 1];
-        if (!pt2) break;
-        
-        let t1 = pt1.t;
-        let t2 = pt2.t;
-        
-        // Trunk base is 1.25x the sheath scale, tapering smoothly to 0.85x at the top (where all sheaths join)
-        let w1 = sheathBaseScale * (1.25 - 0.40 * Math.pow(t1, 1.5)) / 2;
-        let w2 = sheathBaseScale * (1.25 - 0.40 * Math.pow(t2, 1.5)) / 2;
-        
-        let nx1 = cos(pt1.angle), ny1 = sin(pt1.angle);
-        let nx2 = cos(pt2.angle), ny2 = sin(pt2.angle);
-        
-        let x1_L = pt1.x - w1 * nx1, y1_L = pt1.y - w1 * ny1;
-        let x1_R = pt1.x + w1 * nx1, y1_R = pt1.y + w1 * ny1;
-        
-        let x2_L = pt2.x - w2 * nx2, y2_L = pt2.y - w2 * ny2;
-        let x2_R = pt2.x + w2 * nx2, y2_R = pt2.y + w2 * ny2;
-        
-        // Color is blended closer to the leaf color theme for better harmony (gần tương đồng với màu lá)
-        let trunkCol = lerpColor(colStart, colEnd, 0.15);
-        trunkCol.setAlpha(0.92);
-        fill(trunkCol);
-        
-        // Extremely subtle, faint outline blended with the trunk color for minimal visibility (mờ nhạt hơn)
-        let outlineCol = lerpColor(trunkCol, colEnd, 0.1);
-        outlineCol.setAlpha(0.08); // Only 8% opacity
-        stroke(outlineCol);
-        strokeWeight(0.8);
-        
-        beginShape();
-        vertex(x1_L, y1_L);
-        vertex(x2_L, y2_L);
-        vertex(x2_R, y2_R);
-        vertex(x1_R, y1_R);
-        endShape(CLOSE);
-      }
+    // Draw the trunk segments as beautifully curved filled quads (to ở gốc, thon ở đỉnh)
+    noStroke();
+    for (let k = 0; k < N; k++) {
+      let pt1 = trunkPoints[k];
+      let pt2 = trunkPoints[k + 1];
+      if (!pt2) break;
+      
+      let t1 = pt1.t;
+      let t2 = pt2.t;
+      
+      // Trunk base is 1.25x the sheath scale, tapering smoothly to 0.85x at the top (where all sheaths join)
+      let w1 = sheathBaseScale * (1.25 - 0.40 * Math.pow(t1, 1.5)) / 2;
+      let w2 = sheathBaseScale * (1.25 - 0.40 * Math.pow(t2, 1.5)) / 2;
+      
+      let nx1 = cos(pt1.angle), ny1 = sin(pt1.angle);
+      let nx2 = cos(pt2.angle), ny2 = sin(pt2.angle);
+      
+      let x1_L = pt1.x - w1 * nx1, y1_L = pt1.y - w1 * ny1;
+      let x1_R = pt1.x + w1 * nx1, y1_R = pt1.y + w1 * ny1;
+      
+      let x2_L = pt2.x - w2 * nx2, y2_L = pt2.y - w2 * ny2;
+      let x2_R = pt2.x + w2 * nx2, y2_R = pt2.y + w2 * ny2;
+      
+      // Color is blended closer to the leaf color theme for better harmony (gần tương đồng với màu lá)
+      let trunkCol = lerpColor(colStart, colEnd, 0.15);
+      trunkCol.setAlpha(0.92);
+      fill(trunkCol);
+      
+      // Extremely subtle, faint outline blended with the trunk color for minimal visibility (mờ nhạt hơn)
+      let outlineCol = lerpColor(trunkCol, colEnd, 0.1);
+      outlineCol.setAlpha(0.08); // Only 8% opacity
+      stroke(outlineCol);
+      strokeWeight(0.8);
+      
+      beginShape();
+      vertex(x1_L, y1_L);
+      vertex(x2_L, y2_L);
+      vertex(x2_R, y2_R);
+      vertex(x1_R, y1_R);
+      endShape(CLOSE);
     }
     
     // Draw a rounded cap at the top of the trunk (bo tròn chóp đỉnh)
