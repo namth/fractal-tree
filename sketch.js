@@ -1389,11 +1389,11 @@ class BarnsleyFern {
       pColor.setAlpha(0.9); // solid and clean
       fill(pColor);
       
-      // Add a subtle light outline to the leaf sheath for better visibility and definition
+      // Add a very subtle, gentle outline to the leaf sheath segments
       let outlineCol = color(red(colEnd), green(colEnd), blue(colEnd));
-      outlineCol.setAlpha(0.4);
+      outlineCol.setAlpha(0.15); // Low opacity for soft blending
       stroke(outlineCol);
-      strokeWeight(0.8);
+      strokeWeight(0.5); // Thinner line
       
       beginShape();
       vertex(x1_L, y1_L);
@@ -1573,11 +1573,11 @@ class BarnsleyFern {
       trunkCol.setAlpha(0.92);
       fill(trunkCol);
       
-      // Light-colored outline matching the leaf color for better visibility and definition
+      // Soft, gentle outline matching the leaf color for subtle definition
       let outlineCol = color(red(colEnd), green(colEnd), blue(colEnd));
-      outlineCol.setAlpha(0.55);
+      outlineCol.setAlpha(0.22); // Lower opacity for a soft look
       stroke(outlineCol);
-      strokeWeight(1.5);
+      strokeWeight(1.0); // Thinner outline
       
       beginShape();
       vertex(x1_L, y1_L);
