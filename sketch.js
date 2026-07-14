@@ -1299,106 +1299,6 @@ class BarnsleyFern {
     
     let h = this.initLength * heightFactor;
     
-    // If maxDepth is 0, draw the entire frond as a single segmented leaf with a bulging concave sheath at its base!
-    if (this.maxDepth === 0) {
-      let pColor = lerpColor(colStart, colEnd, 0.5);
-      pColor.setAlpha(0.9);
-      let leafWidthFactor = this.fernLeafletWidth / 100.0;
-      
-      // Calculate wind sway parameters
-      let frondPhase = time * 3.4 + i * 0.08;
-      let activeWind = windStrength * (1.0 + 2.0 * (noise(treeSeed + i * 15.3 + time * 0.4) - 0.5));
-      let baseSway = sin(frondPhase) * (activeWind * 0.075);
-      let spineCurvature = radians(12.0 / 8) * (noise(treeSeed + i * 19.8) - 0.5);
-      
-      let transitionLimit = 0.22;
-      let totalLen = h * p;
-      let sheathLen = totalLen * transitionLimit;
-      
-      // Generate sheath spine points (15 detailed segments)
-      let M_sheath = 15;
-      let sheathPoints = [];
-      let curX = 0;
-      let curY = 0;
-      let curAngle = baseAngle;
-      let stepLenSheath = sheathLen / M_sheath;
-      
-      for (let k = 0; k <= M_sheath; k++) {
-        let t = (k / M_sheath) * transitionLimit; // goes from 0 to transitionLimit
-        let bendingFactor = 1.0 + 12.5 * Math.pow(t, 2.4);
-        let currentAngle = curAngle + baseSway * bendingFactor;
-        
-        sheathPoints.push({
-          x: curX,
-          y: curY,
-          angle: currentAngle,
-          t: t
-        });
-        
-        curX += stepLenSheath * sin(currentAngle);
-        curY -= stepLenSheath * cos(currentAngle);
-        curAngle += spineCurvature * (transitionLimit / M_sheath);
-      }
-      
-      // Draw the bulging sheath segments
-      noStroke();
-      for (let k = 0; k < M_sheath; k++) {
-        let pt1 = sheathPoints[k];
-        let pt2 = sheathPoints[k + 1];
-        if (!pt2) break;
-        
-        let t1 = pt1.t;
-        let t2 = pt2.t;
-        
-        // Concave bulge profile matching other levels
-        let bulge1 = 1.0 + (6.5 - 1.0) * Math.pow(1.0 - (t1 / transitionLimit), 3.5);
-        let bulge2 = 1.0 + (6.5 - 1.0) * Math.pow(1.0 - (t2 / transitionLimit), 3.5);
-        
-        let thick1 = max(0.2, this.initThickness * 1.3 * Math.pow(1.0 - t1, 1.25) * bulge1);
-        let thick2 = max(0.2, this.initThickness * 1.3 * Math.pow(1.0 - t2, 1.25) * bulge2);
-        
-        let w1 = thick1 / 2;
-        let w2 = thick2 / 2;
-        
-        let nx1 = cos(pt1.angle), ny1 = sin(pt1.angle);
-        let nx2 = cos(pt2.angle), ny2 = sin(pt2.angle);
-        
-        let x1_L = pt1.x - w1 * nx1, y1_L = pt1.y - w1 * ny1;
-        let x1_R = pt1.x + w1 * nx1, y1_R = pt1.y + w1 * ny1;
-        let x2_L = pt2.x - w2 * nx2, y2_L = pt2.y - w2 * ny2;
-        let x2_R = pt2.x + w2 * nx2, y2_R = pt2.y + w2 * ny2;
-        
-        // Color & outline
-        let tColor = map(t1, 0, transitionLimit, 0.25, 0.45);
-        let pColorSheath = lerpColor(colStart, colEnd, tColor);
-        pColorSheath.setAlpha(0.9);
-        fill(pColorSheath);
-        
-        let outlineCol = color(red(colEnd), green(colEnd), blue(colEnd));
-        outlineCol.setAlpha(0.15);
-        stroke(outlineCol);
-        strokeWeight(0.5);
-        
-        beginShape();
-        vertex(x1_L, y1_L);
-        vertex(x2_L, y2_L);
-        vertex(x2_R, y2_R);
-        vertex(x1_R, y1_R);
-        endShape(CLOSE);
-      }
-      
-      // Reset stroke for drawing the leaf blade
-      noStroke();
-      
-      // Draw the segmented leaf blade starting from the top of the sheath
-      let lastPt = sheathPoints[M_sheath];
-      let remainingLen = totalLen * (1.0 - transitionLimit);
-      if (remainingLen > 2.0) {
-        this.drawSegmentedLeaf(lastPt.x, lastPt.y, lastPt.angle, remainingLen, pColor, 0.11 * leafWidthFactor, 1.0);
-      }
-      return;
-    }
-    
     // Softer, stronger wind bending parameters (scaled up internal multiplier for 1-6 range, near synchronized)
     let frondPhase = time * 3.4 + i * 0.08;
     // Active wind fluctuates dynamically between 0 and 2 * windStrength based on noise
@@ -1413,6 +1313,9 @@ class BarnsleyFern {
     let curAngle = baseAngle;
     let stepLenDetailed = h / M;
     let spineCurvatureDetailed = radians(12.0 / M) * (noise(treeSeed + i * 19.8) - 0.5);
+    
+    // Total gravity bend for the spine (tạo dáng rủ xuống tự nhiên cho toàn thân cành lá)
+    let totalGravity = 0.65; // ~37 degrees max bending at tip
     
     for (let k = 0; k <= M; k++) {
       let t = k / M;
@@ -1430,8 +1333,9 @@ class BarnsleyFern {
       curX += stepLenDetailed * sin(currentAngle);
       curY -= stepLenDetailed * cos(currentAngle);
       
-      // Natural curvature
-      curAngle += spineCurvatureDetailed;
+      // Natural curvature and gravity droop combined (rủ xuống do trọng lực)
+      let gravityStep = (totalGravity * sin(currentAngle) * Math.pow(t, 1.3)) / M;
+      curAngle += spineCurvatureDetailed + gravityStep;
     }
     
     // 2. Draw the spine stem using detailed quads for a beautiful, organic concave leaf sheath (bẹ lá loe hình phễu)
@@ -1448,19 +1352,37 @@ class BarnsleyFern {
       let t1 = pt1.t;
       let t2 = pt2.t;
       
-      // Bulge factor with high exponent (3.5) and 6.5x base thickness for a true flared concave sheath profile (loe dần lõm ở 2 bên)
-      let bulge1 = 1.0;
-      let bulge2 = 1.0;
+      let thick1, thick2;
       
+      // Calculate thickness at pt1
       if (t1 < transitionLimit) {
-        bulge1 = 1.0 + (6.5 - 1.0) * Math.pow(1.0 - (t1 / transitionLimit), 3.5);
-      }
-      if (t2 < transitionLimit) {
-        bulge2 = 1.0 + (6.5 - 1.0) * Math.pow(1.0 - (t2 / transitionLimit), 3.5);
+        let bulge1 = 1.0 + (6.5 - 1.0) * Math.pow(1.0 - (t1 / transitionLimit), 3.5);
+        thick1 = max(0.2, this.initThickness * 1.3 * Math.pow(1.0 - t1, 1.25) * bulge1);
+      } else {
+        let stemThick1 = this.initThickness * 1.3 * Math.pow(1.0 - t1, 1.25);
+        let leafThick1 = 0;
+        if (this.maxDepth === 0) {
+          let u1 = (t1 - transitionLimit) / (1.0 - transitionLimit);
+          let maxW = h * (this.fernLeafletWidth / 100.0) * 0.11;
+          leafThick1 = maxW * Math.pow(u1, 0.35) * (1.0 - u1) * 2.15;
+        }
+        thick1 = max(0.2, stemThick1 + leafThick1);
       }
       
-      let thick1 = max(0.2, this.initThickness * 1.3 * Math.pow(1.0 - t1, 1.25) * bulge1);
-      let thick2 = max(0.2, this.initThickness * 1.3 * Math.pow(1.0 - t2, 1.25) * bulge2);
+      // Calculate thickness at pt2
+      if (t2 < transitionLimit) {
+        let bulge2 = 1.0 + (6.5 - 1.0) * Math.pow(1.0 - (t2 / transitionLimit), 3.5);
+        thick2 = max(0.2, this.initThickness * 1.3 * Math.pow(1.0 - t2, 1.25) * bulge2);
+      } else {
+        let stemThick2 = this.initThickness * 1.3 * Math.pow(1.0 - t2, 1.25);
+        let leafThick2 = 0;
+        if (this.maxDepth === 0) {
+          let u2 = (t2 - transitionLimit) / (1.0 - transitionLimit);
+          let maxW = h * (this.fernLeafletWidth / 100.0) * 0.11;
+          leafThick2 = maxW * Math.pow(u2, 0.35) * (1.0 - u2) * 2.15;
+        }
+        thick2 = max(0.2, stemThick2 + leafThick2);
+      }
       
       let w1 = thick1 / 2;
       let w2 = thick2 / 2;
@@ -1508,90 +1430,92 @@ class BarnsleyFern {
     // Reset stroke for the rest of drawing
     noStroke();
     
-    // Helper function to dynamically interpolate spine points at any continuous t value
-    let getSpinePointAtT = (tVal, ptsList) => {
-      let len = ptsList.length;
-      let idxFloat = tVal * (len - 1);
-      let idxFloor = Math.floor(idxFloat);
-      let idxCeil = Math.ceil(idxFloat);
-      if (idxFloor >= len) return ptsList[len - 1];
-      if (idxFloor === idxCeil) return ptsList[idxFloor];
-      
-      let frac = idxFloat - idxFloor;
-      let pF = ptsList[idxFloor];
-      let pC = ptsList[idxCeil];
-      
-      return {
-        x: lerp(pF.x, pC.x, frac),
-        y: lerp(pF.y, pC.y, frac),
-        angle: lerp(pF.angle, pC.angle, frac),
-        t: lerp(pF.t, pC.t, frac)
+    // 3. Draw the leaflets (pinnae) branching out from the spine at precise mapped coordinates (only if maxDepth > 0)
+    if (this.maxDepth > 0) {
+      // Helper function to dynamically interpolate spine points at any continuous t value
+      let getSpinePointAtT = (tVal, ptsList) => {
+        let len = ptsList.length;
+        let idxFloat = tVal * (len - 1);
+        let idxFloor = Math.floor(idxFloat);
+        let idxCeil = Math.ceil(idxFloat);
+        if (idxFloor >= len) return ptsList[len - 1];
+        if (idxFloor === idxCeil) return ptsList[idxFloor];
+        
+        let frac = idxFloat - idxFloor;
+        let pF = ptsList[idxFloor];
+        let pC = ptsList[idxCeil];
+        
+        return {
+          x: lerp(pF.x, pC.x, frac),
+          y: lerp(pF.y, pC.y, frac),
+          angle: lerp(pF.angle, pC.angle, frac),
+          t: lerp(pF.t, pC.t, frac)
+        };
       };
-    };
-    
-    // 3. Draw the leaflets (pinnae) branching out from the spine at precise mapped coordinates
-    let subLeafSize = map(this.maxDepth, 2, 4, 4.0, 2.5) * (this.initThickness / 4.0);
-    let altFrac = this.fernAlternateRate / 100.0;
-    
-    for (let k = 1; k <= countToDraw; k++) {
-      let tL = k / N;
-      let ptL = getSpinePointAtT(tL, spinePoints);
-      let pColorL = lerpColor(colStart, colEnd, tL);
-      pColorL.setAlpha(0.85);
       
-      // Sweep angle: 90 degrees at base down to 8 degrees at tip (relative to main stem)
-      let angleBase = 90.0;
-      let angleTip = 8.0;
-      let currentBranchAngleL = map(tL, 0, 1, radians(angleBase), radians(angleTip));
+      let subLeafSize = map(this.maxDepth, 2, 4, 4.0, 2.5) * (this.initThickness / 4.0);
+      let altFrac = this.fernAlternateRate / 100.0;
       
-      // Left leaflet size and thickness
-      let maxLen = h * (this.fernLeafletLength / 100.0);
-      let leafletLenL = maxLen * Math.pow(tL, 0.45) * Math.pow(1.0 - tL, this.fernTaperProfile);
-      let lenVarL = (noise(treeSeed + k * 14.3 + i * 7.2) - 0.5) * 0.22;
-      leafletLenL *= (1.0 + lenVarL);
-      
-      // Calculate child pairs for left leaflet (25% tip reduction zone)
-      let reduceCount = Math.max(1, Math.round(N * 0.25));
-      let defaultChildPairs = Math.max(2, Math.round(this.fernBranchPoints * 0.65));
-      let distFromTipL = N - k;
-      let childPairsL = defaultChildPairs;
-      if (distFromTipL < reduceCount) {
-        let steps = reduceCount - distFromTipL;
-        childPairsL = Math.max(2, Math.round(defaultChildPairs * Math.pow(0.65, steps)));
-      }
-      
-      if (leafletLenL >= 2.0) {
-        let stemThickL = max(0.5, this.initThickness * (1.3 - 1.05 * tL));
-        let thetaL = ptL.angle - currentBranchAngleL;
-        this.drawFernBranch(ptL.x, ptL.y, thetaL, leafletLenL, stemThickL, 1, this.maxDepth, pColorL, 1.0, childPairsL, i * 1000 + k * 2);
-      }
-      
-      // Right leaflet position (shifted forward along the spine based on altFrac)
-      let tR = (k + 0.5 * altFrac) / N;
-      if (tR <= p) {
-        let ptR = getSpinePointAtT(tR, spinePoints);
-        let pColorR = lerpColor(colStart, colEnd, tR);
-        pColorR.setAlpha(0.85);
+      for (let k = 1; k <= countToDraw; k++) {
+        let tL = k / N;
+        let ptL = getSpinePointAtT(tL, spinePoints);
+        let pColorL = lerpColor(colStart, colEnd, tL);
+        pColorL.setAlpha(0.85);
         
-        let currentBranchAngleR = map(tR, 0, 1, radians(angleBase), radians(angleTip));
-        let leafletLenR = maxLen * Math.pow(tR, 0.45) * Math.pow(1.0 - tR, this.fernTaperProfile);
-        let lenVarR = (noise(treeSeed + (k + 0.5 * altFrac) * 14.3 + i * 7.2) - 0.5) * 0.22;
-        leafletLenR *= (1.0 + lenVarR);
+        // Sweep angle: 90 degrees at base down to 8 degrees at tip (relative to main stem)
+        let angleBase = 90.0;
+        let angleTip = 8.0;
+        let currentBranchAngleL = map(tL, 0, 1, radians(angleBase), radians(angleTip));
         
-        // Calculate child pairs for right leaflet (25% tip reduction zone)
-        let reduceCountR = Math.max(1, Math.round(N * 0.25));
-        let defaultChildPairsR = Math.max(2, Math.round(this.fernBranchPoints * 0.65));
-        let distFromTipR = N - (k + 0.5 * altFrac);
-        let childPairsR = defaultChildPairsR;
-        if (distFromTipR < reduceCountR) {
-          let steps = reduceCountR - distFromTipR;
-          childPairsR = Math.max(2, Math.round(defaultChildPairsR * Math.pow(0.65, steps)));
+        // Left leaflet size and thickness
+        let maxLen = h * (this.fernLeafletLength / 100.0);
+        let leafletLenL = maxLen * Math.pow(tL, 0.45) * Math.pow(1.0 - tL, this.fernTaperProfile);
+        let lenVarL = (noise(treeSeed + k * 14.3 + i * 7.2) - 0.5) * 0.22;
+        leafletLenL *= (1.0 + lenVarL);
+        
+        // Calculate child pairs for left leaflet (25% tip reduction zone)
+        let reduceCount = Math.max(1, Math.round(N * 0.25));
+        let defaultChildPairs = Math.max(2, Math.round(this.fernBranchPoints * 0.65));
+        let distFromTipL = N - k;
+        let childPairsL = defaultChildPairs;
+        if (distFromTipL < reduceCount) {
+          let steps = reduceCount - distFromTipL;
+          childPairsL = Math.max(2, Math.round(defaultChildPairs * Math.pow(0.65, steps)));
         }
         
-        if (leafletLenR >= 2.0) {
-          let stemThickR = max(0.5, this.initThickness * (1.3 - 1.05 * tR));
-          let thetaR = ptR.angle + currentBranchAngleR;
-          this.drawFernBranch(ptR.x, ptR.y, thetaR, leafletLenR, stemThickR, 1, this.maxDepth, pColorR, 1.0, childPairsR, i * 1000 + k * 2 + 1);
+        if (leafletLenL >= 2.0) {
+          let stemThickL = max(0.5, this.initThickness * (1.3 - 1.05 * tL));
+          let thetaL = ptL.angle - currentBranchAngleL;
+          this.drawFernBranch(ptL.x, ptL.y, thetaL, leafletLenL, stemThickL, 1, this.maxDepth, pColorL, 1.0, childPairsL, i * 1000 + k * 2);
+        }
+        
+        // Right leaflet position (shifted forward along the spine based on altFrac)
+        let tR = (k + 0.5 * altFrac) / N;
+        if (tR <= p) {
+          let ptR = getSpinePointAtT(tR, spinePoints);
+          let pColorR = lerpColor(colStart, colEnd, tR);
+          pColorR.setAlpha(0.85);
+          
+          let currentBranchAngleR = map(tR, 0, 1, radians(angleBase), radians(angleTip));
+          let leafletLenR = maxLen * Math.pow(tR, 0.45) * Math.pow(1.0 - tR, this.fernTaperProfile);
+          let lenVarR = (noise(treeSeed + (k + 0.5 * altFrac) * 14.3 + i * 7.2) - 0.5) * 0.22;
+          leafletLenR *= (1.0 + lenVarR);
+          
+          // Calculate child pairs for right leaflet (25% tip reduction zone)
+          let reduceCountR = Math.max(1, Math.round(N * 0.25));
+          let defaultChildPairsR = Math.max(2, Math.round(this.fernBranchPoints * 0.65));
+          let distFromTipR = N - (k + 0.5 * altFrac);
+          let childPairsR = defaultChildPairsR;
+          if (distFromTipR < reduceCountR) {
+            let steps = reduceCountR - distFromTipR;
+            childPairsR = Math.max(2, Math.round(defaultChildPairsR * Math.pow(0.65, steps)));
+          }
+          
+          if (leafletLenR >= 2.0) {
+            let stemThickR = max(0.5, this.initThickness * (1.3 - 1.05 * tR));
+            let thetaR = ptR.angle + currentBranchAngleR;
+            this.drawFernBranch(ptR.x, ptR.y, thetaR, leafletLenR, stemThickR, 1, this.maxDepth, pColorR, 1.0, childPairsR, i * 1000 + k * 2 + 1);
+          }
         }
       }
     }
