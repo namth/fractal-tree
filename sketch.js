@@ -1406,11 +1406,8 @@ class BarnsleyFern {
       let x2_L = pt2.x - w2 * nx2, y2_L = pt2.y - w2 * ny2;
       let x2_R = pt2.x + w2 * nx2, y2_R = pt2.y + w2 * ny2;
       
-      // Shift sheath colors to be lighter, more similar to the main leaves (gần tương đồng với màu lá)
-      let tColor = t1;
-      if (t1 < transitionLimit) {
-        tColor = map(t1, 0, transitionLimit, 0.25, 0.45);
-      }
+      // Smooth continuous color transition across the entire leaf (no sudden color jumps)
+      let tColor = lerp(0.12, 1.0, t1);
       let pColor = lerpColor(colStart, colEnd, tColor);
       pColor.setAlpha(0.9); // solid and clean
       fill(pColor);
@@ -1441,20 +1438,23 @@ class BarnsleyFern {
       let startIndex = Math.floor(M * transitionLimit);
       let endIndex = countToDrawDetailed - 1;
       
-      // Vein color is a brighter/lighter version of the leaf color theme
-      let veinCol = lerpColor(colStart, colEnd, 0.75);
-      veinCol.setAlpha(0.65); // slightly transparent and glowing
-      stroke(veinCol);
-      
       for (let k = startIndex; k < endIndex; k++) {
         let pt1 = spinePoints[k];
         let pt2 = spinePoints[k + 1];
         if (!pt2) break;
         
         let t1 = pt1.t;
-        // Taper vein thickness from 1.5px at base to 0.4px at tip
+        
+        // Leaf body color at this segment
+        let bodyCol = lerpColor(colStart, colEnd, lerp(0.12, 1.0, t1));
+        // Vein is just slightly brighter/lighter than local body color (hòa hợp mờ nhạt, không nổi quá)
+        let veinCol = lerpColor(bodyCol, colEnd, 0.15);
+        veinCol.setAlpha(0.35); // Low opacity for a soft translucent blend
+        stroke(veinCol);
+        
+        // Taper vein thickness from 1.3px at base to 0.3px at tip
         let u = (t1 - transitionLimit) / (1.0 - transitionLimit);
-        let veinThick = map(u, 0, 1, 1.5, 0.4);
+        let veinThick = map(u, 0, 1, 1.3, 0.3);
         strokeWeight(veinThick);
         
         line(pt1.x, pt1.y, pt2.x, pt2.y);
