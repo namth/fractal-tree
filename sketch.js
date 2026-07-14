@@ -1543,6 +1543,9 @@ class BarnsleyFern {
       curAngle += trunkCurvature;
     }
     
+    // Base scale of the leaf sheaths (bẹ lá) is initThickness * 1.3 * 5.5
+    let sheathBaseScale = this.initThickness * 1.3 * 5.5;
+    
     // Draw the trunk segments as beautifully curved filled quads (to ở gốc, thon ở đỉnh)
     noStroke();
     for (let k = 0; k < N; k++) {
@@ -1553,8 +1556,6 @@ class BarnsleyFern {
       let t1 = pt1.t;
       let t2 = pt2.t;
       
-      // Base scale of the leaf sheaths (bẹ lá) is initThickness * 1.3 * 5.5
-      let sheathBaseScale = this.initThickness * 1.3 * 5.5;
       // Trunk base is 1.25x the sheath scale, tapering smoothly to 0.85x at the top (where all sheaths join)
       let w1 = sheathBaseScale * (1.25 - 0.40 * Math.pow(t1, 1.5)) / 2;
       let w2 = sheathBaseScale * (1.25 - 0.40 * Math.pow(t2, 1.5)) / 2;
