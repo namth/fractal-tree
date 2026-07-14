@@ -1509,6 +1509,72 @@ class BarnsleyFern {
         break;
     }
     
+    // Draw a short organic trunk (thân ngắn) emerging from the ground
+    let trunkLength = this.initLength * 0.12; // Short trunk (12% of main leaf length)
+    let N = 5;
+    let step = trunkLength / N;
+    let curX = 0;
+    let curY = 0;
+    let curAngle = 0;
+    
+    // Slight organic static bend and minor wind sway for the trunk itself
+    let trunkCurvature = radians(8.0 / N) * (noise(treeSeed + 50.5) - 0.5) * this.treeVariation;
+    let trunkSway = sin(time * 2.5) * (windStrength * 0.005) * this.treeVariation;
+    
+    let trunkPoints = [];
+    for (let k = 0; k <= N; k++) {
+      let t = k / N;
+      let angle = curAngle + trunkSway * Math.pow(t, 2);
+      trunkPoints.push({ x: curX, y: curY, angle: angle, t: t });
+      
+      curX += step * sin(angle);
+      curY -= step * cos(angle);
+      curAngle += trunkCurvature;
+    }
+    
+    // Draw the trunk segments as beautifully curved filled quads (to ở gốc, thon ở đỉnh)
+    noStroke();
+    for (let k = 0; k < N; k++) {
+      let pt1 = trunkPoints[k];
+      let pt2 = trunkPoints[k + 1];
+      if (!pt2) break;
+      
+      let t1 = pt1.t;
+      let t2 = pt2.t;
+      
+      // Base scale of the leaf sheaths (bẹ lá) is initThickness * 1.3 * 5.5
+      let sheathBaseScale = this.initThickness * 1.3 * 5.5;
+      // Trunk base is 1.25x the sheath scale, tapering smoothly to 0.85x at the top (where all sheaths join)
+      let w1 = sheathBaseScale * (1.25 - 0.40 * Math.pow(t1, 1.5)) / 2;
+      let w2 = sheathBaseScale * (1.25 - 0.40 * Math.pow(t2, 1.5)) / 2;
+      
+      let nx1 = cos(pt1.angle), ny1 = sin(pt1.angle);
+      let nx2 = cos(pt2.angle), ny2 = sin(pt2.angle);
+      
+      let x1_L = pt1.x - w1 * nx1, y1_L = pt1.y - w1 * ny1;
+      let x1_R = pt1.x + w1 * nx1, y1_R = pt1.y + w1 * ny1;
+      
+      let x2_L = pt2.x - w2 * nx2, y2_L = pt2.y - w2 * ny2;
+      let x2_R = pt2.x + w2 * nx2, y2_R = pt2.y + w2 * ny2;
+      
+      // Color is a very dark, organic wood/bark color blended with the leaf theme
+      let trunkCol = lerpColor(colStart, color(10, 8, 6), 0.65);
+      trunkCol.setAlpha(0.95);
+      fill(trunkCol);
+      
+      beginShape();
+      vertex(x1_L, y1_L);
+      vertex(x2_L, y2_L);
+      vertex(x2_R, y2_R);
+      vertex(x1_R, y1_R);
+      endShape(CLOSE);
+    }
+    
+    // Translate and rotate to the top of the trunk before drawing fronds
+    let topPt = trunkPoints[N];
+    translate(topPt.x, topPt.y);
+    rotate(topPt.angle);
+    
     // Set leaflet angle based on treeVariation (swept angle)
     let leafletBranchAngle = radians(50 + this.treeVariation * 30);
     
