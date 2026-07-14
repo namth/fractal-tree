@@ -1068,6 +1068,38 @@ class BarnsleyFern {
     pop();
   }
 
+  drawRoundedLeaf(x, y, angle, w, h, pColor) {
+    push();
+    translate(x, y);
+    rotate(angle);
+    
+    // Very small LOD: draw a simple line
+    if (h < 1.2) {
+      stroke(pColor);
+      strokeWeight(0.6);
+      line(0, 0, 0, -h);
+    } else if (h < 3.8) {
+      // Mid range LOD: draw a simple sharp ellipse
+      noStroke();
+      fill(pColor);
+      ellipse(0, -h * 0.5, w, h);
+    } else {
+      // High details LOD: draw a rounded bulbous leaf
+      noStroke();
+      fill(pColor);
+      beginShape();
+      vertex(0, 0);
+      // Bulge out to maximum width very quickly (near the base) and maintain width
+      bezierVertex(-w * 0.9, -h * 0.1, -w * 1.2, -h * 0.6, -w * 0.6, -h * 0.9);
+      // Curve smoothly across the top
+      bezierVertex(-w * 0.2, -h * 1.1, w * 0.2, -h * 1.1, w * 0.6, -h * 0.9);
+      // Curve back down the right side
+      bezierVertex(w * 1.2, -h * 0.6, w * 0.9, -h * 0.1, 0, 0);
+      endShape(CLOSE);
+    }
+    pop();
+  }
+
   drawSegmentedLeaf(startX, startY, branchAngle, branchLen, pColor, ratio, widthScale) {
     if (widthScale === undefined) widthScale = 1.0;
     
@@ -1172,12 +1204,26 @@ class BarnsleyFern {
       let posX = startX + (leafHash4 - 0.5) * 4 * this.treeVariation;
       let posY = startY + (leafHash2 - 0.5) * 4 * this.treeVariation;
 
+      // Global hashes based on treeSeed for final leaf shape (computed once per tree)
+      let seedHashWidth = (Math.abs(Math.sin(treeSeed * 18.3 + 4.5)) * 1000) % 1;
+      let seedHashLen = (Math.abs(Math.sin(treeSeed * 27.9 + 2.1)) * 1000) % 1;
+      let seedHashShape = (Math.abs(Math.sin(treeSeed * 88.8 + 1.1)) * 1000) % 1;
+      
+      let globalWidthMultiplier = map(seedHashWidth, 0, 1, 0.4, 1.8); // Ngẫu nhiên độ dẹt (0.4x đến 1.8x)
+      let globalLenMultiplier = map(seedHashLen, 0, 1, 0.6, 1.5);     // Ngẫu nhiên độ dài (0.6x đến 1.5x)
+      let isRounded = (seedHashShape < 0.35); // 35% xác suất lá bo tròn
+      
       if (maxLevel <= 2) {
-        this.drawSegmentedLeaf(posX, posY, branchAngle + angleOffset, finalBranchLen, pColor, ratio, finalWidthScale * levelWidthScale * leafScale);
+        this.drawSegmentedLeaf(posX, posY, branchAngle + angleOffset, finalBranchLen * globalLenMultiplier, pColor, ratio, finalWidthScale * levelWidthScale * leafScale * globalWidthMultiplier);
       } else {
-        let w = finalBranchLen * ratio * finalWidthScale * levelWidthScale * leafScale;
-        let h = finalBranchLen * leafScale;
-        this.drawSoftPointedLeaf(posX, posY, branchAngle + angleOffset, w, h, pColor);
+        let w = finalBranchLen * ratio * finalWidthScale * levelWidthScale * leafScale * globalWidthMultiplier;
+        let h = finalBranchLen * leafScale * globalLenMultiplier;
+        
+        if (isRounded) {
+          this.drawRoundedLeaf(posX, posY, branchAngle + angleOffset, w, h, pColor);
+        } else {
+          this.drawSoftPointedLeaf(posX, posY, branchAngle + angleOffset, w, h, pColor);
+        }
       }
       return;
     }
@@ -1209,7 +1255,12 @@ class BarnsleyFern {
     
     // Draw child branches recursively (staggered/alternating based on fernAlternateRate)
     let altFactor = this.fernAlternateRate / 100.0;
-    let baseAng = (currentLevel === 1) ? 50.0 : 40.0;
+    
+    // Calculate global tree-level random base angle for deep branches (áp dụng chung 1 lần cho toàn cây)
+    let seedHashAng = (Math.abs(Math.sin(treeSeed * 42.12 + 8.9)) * 1000) % 1;
+    let globalDeepBaseAng = map(seedHashAng, 0, 1, 40.0, 90.0);
+    
+    let baseAng = (currentLevel === 1) ? 50.0 : globalDeepBaseAng;
     let tipAng  = (currentLevel === 1) ? 6.0  : 5.0;
     
     let P = levelPairs;
