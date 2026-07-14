@@ -1083,12 +1083,19 @@ class BarnsleyFern {
     let activeWind = windStrength * (1.0 + 2.0 * (noise(treeSeed + startX * 0.05 + startY * 0.05) - 0.5));
     let segmentSway = sin(frondPhase) * (activeWind * 0.006); // subtle curvature along the leaf
     
+    // Gravity strength: longer leaves droop more, smaller leaflets are stiffer
+    let gravityStrength = 0.13 * (branchLen > 80 ? 1.0 : 0.35);
+    
     let pts = [];
     for (let m = 0; m <= M; m++) {
       pts.push({ x: curX, y: curY, u: m / M, angle: curAngle });
       curX += step * sin(curAngle);
       curY -= step * cos(curAngle);
-      curAngle += segmentSway;
+      
+      // Dynamic gravity droop: pulls leaf downwards (PI or -PI direction) based on segment position u
+      let u = m / M;
+      let gravityBend = gravityStrength * sin(curAngle) * Math.pow(u, 1.2);
+      curAngle += segmentSway + gravityBend;
     }
     
     let maxW = branchLen * ratio * widthScale;
