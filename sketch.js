@@ -1555,8 +1555,8 @@ class BarnsleyFern {
       curAngle += trunkCurvature;
     }
     
-    // Base scale of the leaf sheaths (bẹ lá) is initThickness * 1.3 * 5.5
-    let sheathBaseScale = this.initThickness * 1.3 * 5.5;
+    // Base scale of the leaf sheaths (bẹ lá) is initThickness * 1.3 * 6.5
+    let sheathBaseScale = this.initThickness * 1.3 * 6.5;
     
     // Draw the trunk segments as beautifully curved filled quads (to ở gốc, thon ở đỉnh) if trunkLength > 0
     if (trunkLength > 0) {
@@ -1569,9 +1569,9 @@ class BarnsleyFern {
         let t1 = pt1.t;
         let t2 = pt2.t;
         
-        // Trunk base is 1.25x the sheath scale, tapering smoothly to 0.85x at the top (where all sheaths join)
-        let w1 = sheathBaseScale * (1.25 - 0.40 * Math.pow(t1, 1.5)) / 2;
-        let w2 = sheathBaseScale * (1.25 - 0.40 * Math.pow(t2, 1.5)) / 2;
+        // Trunk base starts at 1.45x the sheath scale (gốc to ra thêm), tapering smoothly to 1.05x at the top
+        let w1 = sheathBaseScale * (1.45 - 0.40 * Math.pow(t1, 1.5)) / 2;
+        let w2 = sheathBaseScale * (1.45 - 0.40 * Math.pow(t2, 1.5)) / 2;
         
         let nx1 = cos(pt1.angle), ny1 = sin(pt1.angle);
         let nx2 = cos(pt2.angle), ny2 = sin(pt2.angle);
@@ -1604,7 +1604,7 @@ class BarnsleyFern {
     
     // Draw a rounded cap at the top of the trunk (bo tròn chóp đỉnh)
     let topPt = trunkPoints[N];
-    let topW = sheathBaseScale * (1.25 - 0.40 * Math.pow(1.0, 1.5)); // Diameter matching top segment width
+    let topW = sheathBaseScale * (1.45 - 0.40 * Math.pow(1.0, 1.5)); // Diameter matching top segment width
     let capCol = lerpColor(colStart, colEnd, 0.15);
     capCol.setAlpha(0.92);
     fill(capCol);
