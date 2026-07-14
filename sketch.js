@@ -1573,11 +1573,11 @@ class BarnsleyFern {
       trunkCol.setAlpha(0.92);
       fill(trunkCol);
       
-      // Soft, gentle outline matching the leaf color for subtle definition
-      let outlineCol = color(red(colEnd), green(colEnd), blue(colEnd));
-      outlineCol.setAlpha(0.22); // Lower opacity for a soft look
+      // Extremely subtle, faint outline blended with the trunk color for minimal visibility (mờ nhạt hơn)
+      let outlineCol = lerpColor(trunkCol, colEnd, 0.1);
+      outlineCol.setAlpha(0.08); // Only 8% opacity
       stroke(outlineCol);
-      strokeWeight(1.0); // Thinner outline
+      strokeWeight(0.8);
       
       beginShape();
       vertex(x1_L, y1_L);
@@ -1587,8 +1587,20 @@ class BarnsleyFern {
       endShape(CLOSE);
     }
     
-    // Translate and rotate to the top of the trunk before drawing fronds
+    // Draw a rounded cap at the top of the trunk (bo tròn chóp đỉnh)
     let topPt = trunkPoints[N];
+    let topW = sheathBaseScale * (1.25 - 0.40 * Math.pow(1.0, 1.5)); // Diameter matching top segment width
+    let capCol = lerpColor(colStart, colEnd, 0.15);
+    capCol.setAlpha(0.92);
+    fill(capCol);
+    
+    let capOutlineCol = lerpColor(capCol, colEnd, 0.1);
+    capOutlineCol.setAlpha(0.08); // faint outline matching trunk
+    stroke(capOutlineCol);
+    strokeWeight(0.8);
+    ellipse(topPt.x, topPt.y, topW, topW);
+    
+    // Translate and rotate to the top of the trunk before drawing fronds
     translate(topPt.x, topPt.y);
     rotate(topPt.angle);
     
