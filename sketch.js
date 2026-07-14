@@ -2611,7 +2611,8 @@ function exportImage() {
 function triggerAllInputUpdates() {
   const ids = [
     'initLength', 'branchAngle', 'lengthDecay', 'initThickness', 
-    'thicknessDecay', 'maxDepth', 'treeVariation', 'growthSpeed', 'windStrength'
+    'thicknessDecay', 'maxDepth', 'treeVariation', 'growthSpeed', 'windStrength',
+    'fernFrondCount', 'fernSpreadAngle', 'fernLeafletLength', 'fernLeafletWidth', 'fernTaperProfile', 'fernBranchPoints', 'fernAlternateRate'
   ];
   
   ids.forEach(id => {
