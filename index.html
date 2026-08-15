@@ -97,7 +97,7 @@
               <label for="branchAngle">Góc rẽ nhánh</label>
               <span class="value-display" id="branchAngle-val">20°</span>
             </div>
-            <input type="range" id="branchAngle" min="0" max="30" value="20" step="1">
+            <input type="range" id="branchAngle" min="12" max="36" value="20" step="1">
           </div>
 
           <div class="control-item tree-only">
@@ -119,9 +119,9 @@
           <div class="control-item tree-only">
             <div class="label-wrapper">
               <label for="thicknessDecay">Tỉ lệ giảm độ dày</label>
-              <span class="value-display" id="thicknessDecay-val">0.75</span>
+              <span class="value-display" id="thicknessDecay-val">0.66</span>
             </div>
-            <input type="range" id="thicknessDecay" min="0.5" max="0.9" value="0.75" step="0.01">
+            <input type="range" id="thicknessDecay" min="0.45" max="0.66" value="0.66" step="0.01">
           </div>
 
           <div class="control-item">
@@ -210,6 +210,28 @@
                 <option value="emerald" selected>Emerald (Xanh ngọc lục bảo)</option>
                 <option value="sakura">Sakura (Hoa Anh Đào)</option>
                 <option value="autumn">Autumn Maple (Lá phong vàng)</option>
+                <option value="ginkgo">Golden Ginkgo (Lá ngân hạnh vàng)</option>
+                <option value="wisteria">Wisteria Violet (Hoa tử đằng tím)</option>
+                <option value="frost">Crystal Frost (Lá băng tuyết cổ tích)</option>
+                <option value="sunset">Fiery Sunset (Lá hoàng hôn rực rỡ)</option>
+                <option value="midnight">Celestial Midnight (Lá đêm dải ngân hà)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="control-item tree-only" id="leaf-shape-wrapper">
+            <label for="leafShape">Dạng hình học lá</label>
+            <div class="select-wrapper">
+              <select id="leafShape">
+                <option value="auto" selected>✨ Tự động theo loại lá</option>
+                <option value="pointed">Lá Đỉnh Nhọn (Giọt nước)</option>
+                <option value="needle">Lá Kim (Lá thông 3 chân)</option>
+                <option value="single_needle">Lá Kim Đơn (Đầu nhọn hoắt, lá x4)</option>
+                <option value="maple">Lá Phong (3-5 thùy)</option>
+                <option value="ginkgo_fan">Lá Ngân Hạnh (Hình quạt)</option>
+                <option value="heart">Lá Trái Tim</option>
+                <option value="bodhi">Lá Bồ Đề (Đỉnh nhọn hướng ra)</option>
+                <option value="oval">Lá Oval (Hạt dưa)</option>
               </select>
             </div>
           </div>
@@ -246,23 +268,14 @@
 
       <!-- Footer & Action Buttons -->
       <footer class="panel-footer">
-        <div class="action-buttons">
-          <button id="randomBtn" class="btn btn-secondary" title="Xáo trộn ngẫu nhiên thông số">
+        <div class="action-buttons" style="margin-bottom: 10px;">
+          <button id="randomBtn" class="btn btn-primary" style="width: 100%; justify-content: center;" title="Xáo trộn ngẫu nhiên thông số">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
             </svg>
-            Ngẫu nhiên
-          </button>
-          <button id="resetBtn" class="btn btn-secondary" title="Đặt lại các thông số mặc định">
-            Đặt lại
+            Ngẫu nhiên cây mới
           </button>
         </div>
-        <button id="saveBtn" class="btn btn-primary" title="Lưu hình ảnh cây dạng PNG">
-          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-          </svg>
-          Lưu hình ảnh
-        </button>
 
         <div class="btn-group" style="margin-top: 10px;">
           <button id="saveTreeBtn" class="btn btn-secondary" style="flex: 1;" title="Lưu thông số và hình dáng cây vào vườn">
@@ -333,7 +346,12 @@
     </div>
   </div>
 
+  <!-- Tree Rendering Libraries -->
+  <script src="lib/random-engine.js"></script>
+  <script src="lib/fractal-branch-tree.js"></script>
+  <script src="lib/barnsley-fern-tree.js"></script>
+
   <!-- Logic Code -->
-  <script src="sketch.js?v=ternary-3"></script>
+  <script src="sketch.js?v=ternary-4"></script>
 </body>
 </html>
