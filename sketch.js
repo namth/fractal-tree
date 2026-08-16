@@ -47,7 +47,7 @@ let paramState = {
     initLength: 200,
     branchAngle: 20,
     lengthDecay: 0.75,
-    initThickness: 30,
+    initThickness: 36,
     thicknessDecay: 0.66,
     maxDepth: 9,
     treeVariation: 0.80,
@@ -151,8 +151,8 @@ function loadParamsToUI(type) {
       elements.initThickness.max = "6";
       elements.initThickness.step = "0.5";
     } else {
-      elements.initThickness.min = "20";
-      elements.initThickness.max = "50";
+      elements.initThickness.min = "36";
+      elements.initThickness.max = "99";
       elements.initThickness.step = "1";
     }
     elements.initThickness.value = params.initThickness;
@@ -347,14 +347,16 @@ function updateGrowthUI() {
   const ageVal = document.getElementById('growthAge-val');
   const speedVal = document.getElementById('growthSpeed-val');
 
+  let totalTime = (treeRoot && typeof treeRoot.getTotalGrowthTime === 'function') ? treeRoot.getTotalGrowthTime() : 5.0;
+
   if (progressBar && treeRoot) {
-    let stats = treeRoot.getTreeGrowthProgress();
-    let progressPercent = stats.target > 0 ? constrain((stats.current / stats.target) * 100, 0, 100) : 0;
+    let progressPercent = totalTime > 0 ? constrain((animationTime / totalTime) * 100, 0, 100) : 0;
     progressBar.style.width = progressPercent.toFixed(1) + '%';
   }
   
   if (ageVal) {
-    ageVal.textContent = animationTime.toFixed(1) + 's';
+    let displayCur = min(animationTime, totalTime);
+    ageVal.textContent = displayCur.toFixed(1) + 's / ' + totalTime.toFixed(1) + 's';
   }
   
   if (speedVal) {
@@ -519,7 +521,7 @@ function initDOMControls() {
 
   // Button Actions
   if (elements.randomBtn) {
-    elements.randomBtn.addEventListener('click', randomizeSettings);
+    elements.randomBtn.addEventListener('click', () => randomizeSettings(treeType));
   }
 
   // Save Tree and Garden buttons
@@ -574,7 +576,7 @@ function initDOMControls() {
       treeType = 'hybrid';
       toggleUIContext('hybrid');
       loadParamsToUI('hybrid');
-      resetSettings();
+      randomizeSettings('hybrid');
       isPlaying = true;
     });
   }
@@ -586,7 +588,7 @@ function initDOMControls() {
       treeType = 'sequential';
       toggleUIContext('sequential');
       loadParamsToUI('sequential');
-      resetSettings();
+      randomizeSettings('sequential');
       isPlaying = true;
     });
   }
@@ -599,7 +601,7 @@ function initDOMControls() {
       treeType = 'barnsley-fern';
       toggleUIContext('barnsley-fern');
       loadParamsToUI('barnsley-fern');
-      resetSettings();
+      randomizeSettings('barnsley-fern');
       isPlaying = true;
     });
   }
@@ -755,9 +757,18 @@ function readUIValues() {
 }
 
 // Generate cool random parameter values using High-Entropy PRNG Suite
-function randomizeSettings() {
+function randomizeSettings(userChosenType = null) {
   treeSeed = Math.floor(randFloat(1, 999999999));
   
+  // If no type explicitly specified by UI action, pick a random tree type (hybrid or sequential)
+  if (!userChosenType && elements.treeTypeSelect) {
+    const treeTypes = ['hybrid', 'sequential'];
+    const chosenType = randChoice(treeTypes);
+    elements.treeTypeSelect.value = chosenType;
+    treeType = chosenType;
+    toggleUIContext(treeType);
+  }
+
   if (treeType === 'barnsley-fern') {
     // Fern specific random bounds using High-Entropy PRNG
     elements.initLength.value = Math.round(randFloat(540, 840));
@@ -780,7 +791,7 @@ function randomizeSettings() {
     elements.initLength.value = Math.round(randFloat(150, 300));
     elements.branchAngle.value = Math.round(randFloat(12, 36));
     elements.lengthDecay.value = parseFloat(randFloat(0.68, 0.86).toFixed(2));
-    elements.initThickness.value = Math.round(randFloat(20, 45));
+    elements.initThickness.value = Math.round(randFloat(36, 99));
     elements.thicknessDecay.value = parseFloat(randFloat(0.48, 0.66).toFixed(2));
     elements.maxDepth.value = Math.round(randFloat(8, 11));
     elements.treeVariation.value = parseFloat(randFloat(0.65, 1.2).toFixed(2));
@@ -794,8 +805,8 @@ function randomizeSettings() {
     const leaves = ['emerald', 'sakura', 'autumn', 'ginkgo', 'wisteria', 'frost', 'sunset', 'midnight'];
     elements.leafType.value = randChoice(leaves);
 
-    // Random leaf shape selection
-    const shapes = ['auto', 'pointed', 'needle', 'single_needle', 'maple', 'ginkgo_fan', 'heart', 'bodhi', 'oval'];
+    // Random leaf shape selection including all shapes
+    const shapes = ['auto', 'tung_lahan', 'sakura_leaf', 'pointed', 'needle', 'single_needle', 'maple', 'maple5', 'ginkgo_fan', 'heart', 'bodhi', 'oval'];
     elements.leafShape.value = randChoice(shapes);
   }
   
@@ -1020,6 +1031,14 @@ function loadSavedTree(id) {
   toggleUIContext(treeType);
   triggerAllInputUpdates();
   rebuildTree();
+  
+  // Tải trực tiếp cây ở trạng thái trưởng thành hoàn toàn (100% tán lá và cành)
+  if (treeRoot && typeof treeRoot.getTotalGrowthTime === 'function') {
+    let matureTime = treeRoot.getTotalGrowthTime();
+    treeRoot.update(matureTime + 10.0);
+    animationTime = matureTime;
+  }
+  
   isPlaying = true;
 }
 

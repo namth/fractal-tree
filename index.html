@@ -108,12 +108,12 @@
             <input type="range" id="lengthDecay" min="0.68" max="0.86" value="0.75" step="0.01">
           </div>
 
-          <div class="control-item">
+          <div class="control-item fern-only hidden">
             <div class="label-wrapper">
-              <label for="initThickness">Độ dày gốc</label>
-              <span class="value-display" id="initThickness-val">30px</span>
+              <label for="initThickness">Độ dày gốc lá</label>
+              <span class="value-display" id="initThickness-val">4px</span>
             </div>
-            <input type="range" id="initThickness" min="20" max="50" value="30" step="1">
+            <input type="range" id="initThickness" min="1" max="6" value="4" step="0.5">
           </div>
 
           <div class="control-item tree-only">
@@ -223,15 +223,18 @@
             <label for="leafShape">Dạng hình học lá</label>
             <div class="select-wrapper">
               <select id="leafShape">
-                <option value="auto" selected>✨ Tự động theo loại lá</option>
-                <option value="pointed">Lá Đỉnh Nhọn (Giọt nước)</option>
-                <option value="needle">Lá Kim (Lá thông 3 chân)</option>
-                <option value="single_needle">Lá Kim Đơn (Đầu nhọn hoắt, lá x4)</option>
-                <option value="maple">Lá Phong (3-5 thùy)</option>
-                <option value="ginkgo_fan">Lá Ngân Hạnh (Hình quạt)</option>
+                <option value="auto" selected>✨ Lá ngẫu nhiên</option>
+                <option value="tung_lahan">Lá Tùng La Hán</option>
+                <option value="sakura_leaf">Hoa Anh Đào</option>
+                <option value="pointed">Lá Đỉnh Nhọn</option>
+                <option value="needle">Lá Thông</option>
+                <option value="single_needle">Lá Me</option>
+                <option value="maple">Lá Phong tròn</option>
+                <option value="maple5">Lá Phong nhọn</option>
+                <option value="ginkgo_fan">Lá Ngân Hạnh</option>
                 <option value="heart">Lá Trái Tim</option>
-                <option value="bodhi">Lá Bồ Đề (Đỉnh nhọn hướng ra)</option>
-                <option value="oval">Lá Oval (Hạt dưa)</option>
+                <option value="bodhi">Lá Bồ Đề</option>
+                <option value="oval">Lá Oval</option>
               </select>
             </div>
           </div>
@@ -347,11 +350,11 @@
   </div>
 
   <!-- Tree Rendering Libraries -->
-  <script src="lib/random-engine.js"></script>
-  <script src="lib/fractal-branch-tree.js"></script>
-  <script src="lib/barnsley-fern-tree.js"></script>
+  <script src="lib/random-engine.js?v=gentle-spin-v1"></script>
+  <script src="lib/fractal-branch-tree.js?v=gentle-spin-v1"></script>
+  <script src="lib/barnsley-fern-tree.js?v=gentle-spin-v1"></script>
 
   <!-- Logic Code -->
-  <script src="sketch.js?v=ternary-4"></script>
+  <script src="sketch.js?v=gentle-spin-v1"></script>
 </body>
 </html>
