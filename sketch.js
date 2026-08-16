@@ -15,6 +15,7 @@ let windStrength;
 let colorTheme;
 let treeType = 'hybrid'; // Default to hybrid tree type
 let treeFlowerColor = 'yellow'; // Determined once per tree based on treeSeed
+let skyBgSystem; // Dynamic Sky Background Engine
 
 // Fern specific global parameters
 let fernFrondCount = 5;
@@ -237,6 +238,12 @@ function setup() {
 
   // Initialize PRNG seed and generate a 100% randomized tree right at startup!
   randomizeSettings();
+
+  // Initialize Sky Background Engine
+  if (typeof SkyBackgroundSystem !== 'undefined') {
+    skyBgSystem = new SkyBackgroundSystem();
+    skyBgSystem.init(width, height);
+  }
   
   // Populate the garden grid at start
   renderDashboardGrid();
@@ -294,6 +301,19 @@ function draw() {
   // Draw the stateful tree recursively
   let time = frameCount * 0.015; // Time variable for wind sway animation
   treeRoot.draw(time);
+
+  // Ambient sky atmosphere lighting overlay
+  if (typeof skyBgSystem !== 'undefined' && skyBgSystem) {
+    let tint = skyBgSystem.getAmbientTint();
+    if (tint && tint[3] > 0) {
+      resetMatrix();
+      push();
+      noStroke();
+      fill(tint[0], tint[1], tint[2], tint[3] / 255.0);
+      rect(0, 0, width, height);
+      pop();
+    }
+  }
 }
 
 function rebuildTree() {
@@ -365,29 +385,38 @@ function updateGrowthUI() {
 }
 
 
-// Draw the application canvas background depending on theme
+// Draw the application canvas background depending on theme or sky background preset
 function drawThemeBackground() {
-  switch(colorTheme) {
-    case 'cyberpunk':
-      background(6, 6, 12);
-      // Subtle background grid or glow could be drawn here, but simple solid keeps it clean and fast
-      break;
-    case 'sakura':
-      background(15, 12, 15);
-      break;
-    case 'emerald':
-      background(5, 12, 8);
-      break;
-    case 'autumn':
-      background(13, 10, 8);
-      break;
-    case 'monochrome':
-      background(10, 10, 10);
-      break;
-    case 'rainbow':
-    default:
-      background(8, 8, 12);
-      break;
+  if (typeof skyBgSystem !== 'undefined' && skyBgSystem) {
+    skyBgSystem.updateAndDraw();
+    
+    // Apply weather wind bonus to tree wind strength
+    let bonusWind = skyBgSystem.getWeatherWindBonus();
+    if (treeRoot) {
+      treeRoot.windStrength = (windStrength || 1.0) + bonusWind;
+    }
+  } else {
+    switch(colorTheme) {
+      case 'cyberpunk':
+        background(6, 6, 12);
+        break;
+      case 'sakura':
+        background(15, 12, 15);
+        break;
+      case 'emerald':
+        background(5, 12, 8);
+        break;
+      case 'autumn':
+        background(13, 10, 8);
+        break;
+      case 'monochrome':
+        background(10, 10, 10);
+        break;
+      case 'rainbow':
+      default:
+        background(8, 8, 12);
+        break;
+    }
   }
 }
 
@@ -430,6 +459,25 @@ function initDOMControls() {
   if (elements.leafShape) {
     elements.leafShape.addEventListener('change', () => {
       rebuildTree();
+    });
+  }
+
+  elements.skyPreset = document.getElementById('skyPreset');
+  elements.autoSkyCycle = document.getElementById('autoSkyCycle');
+
+  if (elements.skyPreset) {
+    elements.skyPreset.addEventListener('change', () => {
+      if (skyBgSystem) {
+        skyBgSystem.setPreset(elements.skyPreset.value);
+      }
+    });
+  }
+
+  if (elements.autoSkyCycle) {
+    elements.autoSkyCycle.addEventListener('change', () => {
+      if (skyBgSystem) {
+        skyBgSystem.setAutoCycle(elements.autoSkyCycle.checked);
+      }
     });
   }
 
@@ -677,6 +725,15 @@ function readUIValues() {
     colorTheme = elements.colorTheme.value;
   } else if (!colorTheme) {
     colorTheme = 'cyberpunk';
+  }
+
+  if (elements.skyPreset && elements.skyPreset.value && skyBgSystem) {
+    if (!skyBgSystem.autoCycle) {
+      skyBgSystem.setPreset(elements.skyPreset.value);
+    }
+  }
+  if (elements.autoSkyCycle && skyBgSystem) {
+    skyBgSystem.setAutoCycle(elements.autoSkyCycle.checked);
   }
 
   if (elements.treeTypeSelect && elements.treeTypeSelect.value) {

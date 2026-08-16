@@ -240,9 +240,9 @@
           </div>
         </section>
 
-        <!-- Section: Environment / Sway -->
+        <!-- Section: Environment & Sky Background -->
         <section class="control-group">
-          <h2>Môi trường (Gió)</h2>
+          <h2>Môi trường & Nền Trời</h2>
 
           <div class="control-item" id="wind-strength-wrapper">
             <div class="label-wrapper">
@@ -250,6 +250,29 @@
               <span class="value-display" id="windStrength-val">4.0</span>
             </div>
             <input type="range" id="windStrength" min="0" max="2" value="1" step="0.1">
+          </div>
+
+          <div class="control-item" id="sky-preset-wrapper">
+            <label for="skyPreset">Bối cảnh nền trời</label>
+            <div class="select-wrapper">
+              <select id="skyPreset">
+                <option value="none">🖤 Nền đen đặc (Deep Black)</option>
+                <option value="clear_blue" selected>☁️ Trong xanh (Clear Blue)</option>
+                <option value="sunny">☀️ Nắng rực rỡ (Sunny Rays)</option>
+                <option value="rainy">🌧️ Mưa rào (Rainy Storm)</option>
+                <option value="misty">🌫️ Sương mù (Misty Fog)</option>
+                <option value="sunset">🌅 Hoàng hôn (Sunset Glow)</option>
+                <option value="sunrise">🌄 Bình minh (Sunrise Morning)</option>
+                <option value="starry_night">🌙 Đêm đầy sao (Starry Night)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="control-item checkbox-item" style="margin-top: 8px;">
+            <label for="autoSkyCycle" style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.85rem;">
+              <input type="checkbox" id="autoSkyCycle" style="width: 16px; height: 16px; accent-color: var(--accent-color);">
+              <span>Tự động chuyển chu kỳ thời gian (Day/Night)</span>
+            </label>
           </div>
         </section>
 
@@ -353,6 +376,7 @@
   <script src="lib/random-engine.js?v=gentle-spin-v1"></script>
   <script src="lib/fractal-branch-tree.js?v=gentle-spin-v1"></script>
   <script src="lib/barnsley-fern-tree.js?v=gentle-spin-v1"></script>
+  <script src="lib/sky-background.js?v=gentle-spin-v1"></script>
 
   <!-- Logic Code -->
   <script src="sketch.js?v=gentle-spin-v1"></script>
