@@ -13,7 +13,7 @@ let leafShape = 'auto';
 let windSway;
 let windStrength;
 let colorTheme;
-let treeType = 'hybrid'; // Default to hybrid tree type
+let treeType = 'sequential'; // Default to sequential tree type
 let treeFlowerColor = 'yellow'; // Determined once per tree based on treeSeed
 let skyBgSystem; // Dynamic Sky Background Engine
 let activeSavedTreeId = null; // Currently active loaded saved tree ID (for in-place editing/updating)
@@ -648,11 +648,11 @@ function initDOMControls() {
   if (newHybridBtn) {
     newHybridBtn.addEventListener('click', () => {
       hideDashboard();
-      if (elements.treeTypeSelect) elements.treeTypeSelect.value = 'hybrid';
-      treeType = 'hybrid';
-      toggleUIContext('hybrid');
-      loadParamsToUI('hybrid');
-      randomizeSettings('hybrid');
+      if (elements.treeTypeSelect) elements.treeTypeSelect.value = 'sequential';
+      treeType = 'sequential';
+      toggleUIContext('sequential');
+      loadParamsToUI('sequential');
+      randomizeSettings('sequential');
       isPlaying = true;
     });
   }
@@ -767,7 +767,7 @@ function readUIValues() {
   if (elements.treeTypeSelect && elements.treeTypeSelect.value) {
     treeType = elements.treeTypeSelect.value;
   } else if (!treeType) {
-    treeType = 'hybrid';
+    treeType = 'sequential';
   }
 
   if (elements.maxDepth && !isNaN(parseInt(elements.maxDepth.value))) {
@@ -848,8 +848,7 @@ function randomizeSettings(userChosenType = null) {
   
   // If no type explicitly specified by UI action, pick a random tree type (hybrid or sequential)
   if (!userChosenType && elements.treeTypeSelect) {
-    const treeTypes = ['hybrid', 'sequential'];
-    const chosenType = randChoice(treeTypes);
+    const chosenType = 'sequential';
     elements.treeTypeSelect.value = chosenType;
     treeType = chosenType;
     toggleUIContext(treeType);
@@ -1085,7 +1084,7 @@ function loadSavedTree(id) {
   
   // Load variables and seed
   treeSeed = tree.seed;
-  treeType = tree.treeType || 'hybrid';
+  treeType = (tree.treeType === 'barnsley-fern') ? 'barnsley-fern' : 'sequential';
   if (elements.treeTypeSelect) {
     elements.treeTypeSelect.value = treeType;
   }
