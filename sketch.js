@@ -16,6 +16,7 @@ let colorTheme;
 let treeType = 'hybrid'; // Default to hybrid tree type
 let treeFlowerColor = 'yellow'; // Determined once per tree based on treeSeed
 let skyBgSystem; // Dynamic Sky Background Engine
+let activeSavedTreeId = null; // Currently active loaded saved tree ID (for in-place editing/updating)
 
 // Fern specific global parameters
 let fernFrondCount = 5;
@@ -174,7 +175,14 @@ function loadParamsToUI(type) {
   
   if (elements.treeVariation) elements.treeVariation.value = params.treeVariation;
   if (elements.growthSpeed) elements.growthSpeed.value = params.growthSpeed;
-  if (elements.leafType && params.leafType !== undefined) elements.leafType.value = params.leafType;
+  if (elements.leafType && params.leafType !== undefined) {
+    elements.leafType.value = params.leafType;
+    leafType = params.leafType;
+  }
+  if (elements.leafShape && params.leafShape !== undefined) {
+    elements.leafShape.value = params.leafShape;
+    leafShape = params.leafShape;
+  }
   if (elements.windStrength) elements.windStrength.value = params.windStrength;
   if (elements.colorTheme) elements.colorTheme.value = params.colorTheme;
   
@@ -243,6 +251,11 @@ function setup() {
   if (typeof SkyBackgroundSystem !== 'undefined') {
     skyBgSystem = new SkyBackgroundSystem();
     skyBgSystem.init(width, height);
+    if (elements.skyPreset && elements.skyPreset.value) {
+      skyBgSystem.setPreset(elements.skyPreset.value);
+    } else {
+      skyBgSystem.setPreset('starry_night');
+    }
   }
   
   // Populate the garden grid at start
@@ -587,8 +600,23 @@ function initDOMControls() {
       // Pause simulation while naming modal is open
       isPlaying = false;
       document.getElementById('saveModal').classList.remove('hidden');
-      document.getElementById('treeNameInput').value = '';
-      document.getElementById('treeNameInput').focus();
+      const nameInput = document.getElementById('treeNameInput');
+      
+      // If currently editing a loaded saved tree, pre-fill its name
+      if (activeSavedTreeId) {
+        let savedTrees = [];
+        try {
+          const existing = localStorage.getItem('saved_fractal_trees');
+          if (existing) savedTrees = JSON.parse(existing);
+        } catch (e) {}
+        const activeTree = savedTrees.find(t => t.id === activeSavedTreeId);
+        if (activeTree && nameInput) {
+          nameInput.value = activeTree.name;
+        }
+      } else if (nameInput) {
+        nameInput.value = '';
+      }
+      if (nameInput) nameInput.focus();
     });
   }
 
@@ -815,6 +843,7 @@ function readUIValues() {
 
 // Generate cool random parameter values using High-Entropy PRNG Suite
 function randomizeSettings(userChosenType = null) {
+  activeSavedTreeId = null; // Generating a new tree resets active saved tree ID
   treeSeed = Math.floor(randFloat(1, 999999999));
   
   // If no type explicitly specified by UI action, pick a random tree type (hybrid or sequential)
@@ -855,15 +884,15 @@ function randomizeSettings(userChosenType = null) {
     elements.windStrength.value = parseFloat(randFloat(0.4, 1.8).toFixed(1));
 
     // Random theme selection
-    const themes = ['cyberpunk', 'sakura', 'autumn', 'emerald'];
+    const themes = ['cyberpunk', 'eucalyptus', 'sakura', 'autumn', 'emerald'];
     elements.colorTheme.value = randChoice(themes);
 
-    // Random leaf selection from all 8 leaf types
-    const leaves = ['emerald', 'sakura', 'autumn', 'ginkgo', 'wisteria', 'frost', 'sunset', 'midnight'];
+    // Random leaf selection from all leaf types
+    const leaves = ['emerald', 'eucalyptus', 'sakura', 'autumn', 'ginkgo', 'wisteria', 'frost', 'sunset', 'midnight'];
     elements.leafType.value = randChoice(leaves);
 
     // Random leaf shape selection including all shapes
-    const shapes = ['auto', 'tung_lahan', 'sakura_leaf', 'pointed', 'needle', 'single_needle', 'maple', 'maple5', 'ginkgo_fan', 'heart', 'bodhi', 'oval'];
+    const shapes = ['auto', 'willow', 'eucalyptus_long', 'round', 'tung_lahan', 'sakura_leaf', 'pointed', 'needle', 'single_needle', 'maple', 'maple5', 'ginkgo_fan', 'heart', 'bodhi', 'oval'];
     elements.leafShape.value = randChoice(shapes);
   }
   
@@ -955,7 +984,7 @@ function triggerAllInputUpdates() {
 
 // Storage & Dashboard Logic
 
-// Save the current tree parameters and screenshot to local storage
+// Save or update the current tree parameters and screenshot in local storage
 function saveTreeCurrent() {
   const nameInput = document.getElementById('treeNameInput');
   let name = nameInput.value.trim();
@@ -970,37 +999,29 @@ function saveTreeCurrent() {
   // Capture canvas data URL
   let dataUrl = canvasElement.elt.toDataURL('image/jpeg', 0.85);
   
-  // Prepare tree object
-  const treeData = {
-    id: Date.now().toString(),
-    name: name,
-    date: new Date().toLocaleString(),
-    screenshot: dataUrl,
-    seed: treeSeed,
-    treeType: treeType, // Save tree type configuration
-    params: {
-      initLength: elements.initLength.value,
-      branchAngle: elements.branchAngle ? elements.branchAngle.value : undefined,
-      lengthDecay: elements.lengthDecay ? elements.lengthDecay.value : undefined,
-      initThickness: elements.initThickness.value,
-      thicknessDecay: elements.thicknessDecay ? elements.thicknessDecay.value : undefined,
-      maxDepth: elements.maxDepth.value,
-      treeVariation: elements.treeVariation.value,
-      windStrength: elements.windStrength.value,
-      growthSpeed: elements.growthSpeed.value,
-      leafType: elements.leafType ? elements.leafType.value : undefined,
-      colorTheme: elements.colorTheme.value,
-      fernFrondCount: elements.fernFrondCount ? elements.fernFrondCount.value : undefined,
-      fernSpreadAngle: elements.fernSpreadAngle ? elements.fernSpreadAngle.value : undefined,
-      fernLeafletLength: elements.fernLeafletLength ? elements.fernLeafletLength.value : undefined,
-      fernLeafletWidth: elements.fernLeafletWidth ? elements.fernLeafletWidth.value : undefined,
-      fernTaperProfile: elements.fernTaperProfile ? elements.fernTaperProfile.value : undefined,
-      fernBranchPoints: elements.fernBranchPoints ? elements.fernBranchPoints.value : undefined,
-      fernAlternateRate: elements.fernAlternateRate ? elements.fernAlternateRate.value : undefined
-    }
+  // Prepare current parameter payload
+  const currentParams = {
+    initLength: elements.initLength.value,
+    branchAngle: elements.branchAngle ? elements.branchAngle.value : undefined,
+    lengthDecay: elements.lengthDecay ? elements.lengthDecay.value : undefined,
+    initThickness: elements.initThickness.value,
+    thicknessDecay: elements.thicknessDecay ? elements.thicknessDecay.value : undefined,
+    maxDepth: elements.maxDepth.value,
+    treeVariation: elements.treeVariation.value,
+    windStrength: elements.windStrength.value,
+    growthSpeed: elements.growthSpeed.value,
+    leafType: elements.leafType ? elements.leafType.value : (leafType || 'emerald'),
+    leafShape: elements.leafShape ? elements.leafShape.value : (leafShape || 'auto'),
+    colorTheme: elements.colorTheme.value,
+    fernFrondCount: elements.fernFrondCount ? elements.fernFrondCount.value : undefined,
+    fernSpreadAngle: elements.fernSpreadAngle ? elements.fernSpreadAngle.value : undefined,
+    fernLeafletLength: elements.fernLeafletLength ? elements.fernLeafletLength.value : undefined,
+    fernLeafletWidth: elements.fernLeafletWidth ? elements.fernLeafletWidth.value : undefined,
+    fernTaperProfile: elements.fernTaperProfile ? elements.fernTaperProfile.value : undefined,
+    fernBranchPoints: elements.fernBranchPoints ? elements.fernBranchPoints.value : undefined,
+    fernAlternateRate: elements.fernAlternateRate ? elements.fernAlternateRate.value : undefined
   };
-  
-  // Save to localStorage
+
   let savedTrees = [];
   try {
     const existing = localStorage.getItem('saved_fractal_trees');
@@ -1010,11 +1031,37 @@ function saveTreeCurrent() {
   } catch (e) {
     console.error(e);
   }
+
+  // Check if we are updating an existing loaded saved tree card
+  const existingIdx = activeSavedTreeId ? savedTrees.findIndex(t => t.id === activeSavedTreeId) : -1;
+
+  if (existingIdx !== -1) {
+    // Update existing tree in place with fresh screenshot, date, seed, and parameters
+    savedTrees[existingIdx].name = name;
+    savedTrees[existingIdx].date = new Date().toLocaleString() + " (Đã cập nhật)";
+    savedTrees[existingIdx].screenshot = dataUrl;
+    savedTrees[existingIdx].seed = treeSeed;
+    savedTrees[existingIdx].treeType = treeType;
+    savedTrees[existingIdx].params = currentParams;
+  } else {
+    // Create new saved tree entry
+    const newId = Date.now().toString();
+    const treeData = {
+      id: newId,
+      name: name,
+      date: new Date().toLocaleString(),
+      screenshot: dataUrl,
+      seed: treeSeed,
+      treeType: treeType,
+      params: currentParams
+    };
+    savedTrees.push(treeData);
+    activeSavedTreeId = newId;
+  }
   
-  savedTrees.push(treeData);
   localStorage.setItem('saved_fractal_trees', JSON.stringify(savedTrees));
   
-  // Open the dashboard to show the newly saved tree card
+  // Open the dashboard to show the updated tree card
   showDashboard();
 }
 
@@ -1032,6 +1079,9 @@ function loadSavedTree(id) {
   
   const tree = savedTrees.find(t => t.id === id);
   if (!tree) return;
+
+  // Set activeSavedTreeId to track this tree for in-place updates when saving
+  activeSavedTreeId = id;
   
   // Load variables and seed
   treeSeed = tree.seed;
@@ -1042,8 +1092,21 @@ function loadSavedTree(id) {
   
   // Load DOM elements values
   const params = tree.params;
+  
+  let targetLeafShape = params.leafShape || 'auto';
+  leafShape = targetLeafShape;
+  if (elements.leafShape) {
+    elements.leafShape.value = targetLeafShape;
+  }
+
+  let targetLeafType = params.leafType || 'emerald';
+  leafType = targetLeafType;
+  if (elements.leafType) {
+    elements.leafType.value = targetLeafType;
+  }
+
   Object.keys(params).forEach(key => {
-    if (elements[key]) {
+    if (elements[key] && params[key] !== undefined) {
       elements[key].value = params[key];
     }
   });
@@ -1077,7 +1140,8 @@ function loadSavedTree(id) {
       maxDepth: parseInt(params.maxDepth),
       treeVariation: parseFloat(params.treeVariation),
       growthSpeed: parseFloat(params.growthSpeed || 1.0),
-      leafType: params.leafType,
+      leafType: targetLeafType,
+      leafShape: targetLeafShape,
       windStrength: parseFloat(params.windStrength),
       colorTheme: params.colorTheme
     };
@@ -1129,6 +1193,45 @@ function hideDashboard() {
   document.getElementById('dashboardOverlay').classList.add('hidden');
 }
 
+// Dictionary maps for human-readable card parameter labels
+const gardenLabelMaps = {
+  leafShape: {
+    'willow': 'Lá Liễu Rủ',
+    'eucalyptus_long': 'Lá Bạch Đàn Dài',
+    'round': 'Lá Bạc Hà Tròn',
+    'tung_lahan': 'Lá Tùng La Hán',
+    'sakura_leaf': 'Hoa Anh Đào',
+    'pointed': 'Lá Đỉnh Nhọn',
+    'needle': 'Lá Thông',
+    'single_needle': 'Lá Me',
+    'maple': 'Lá Phong tròn',
+    'maple5': 'Lá Phong nhọn',
+    'ginkgo_fan': 'Lá Ngân Hạnh',
+    'heart': 'Lá Trái Tim',
+    'bodhi': 'Lá Bồ Đề',
+    'oval': 'Lá Oval',
+    'auto': 'Tự động'
+  },
+  leafType: {
+    'emerald': 'Emerald (Ngọc lục bảo)',
+    'eucalyptus': 'Eucalyptus Silver (Xanh bạc)',
+    'sakura': 'Sakura (Anh đào)',
+    'autumn': 'Autumn Maple (Phong vàng)',
+    'ginkgo': 'Golden Ginkgo (Ngân hạnh)',
+    'wisteria': 'Wisteria (Tử đằng)',
+    'frost': 'Crystal Frost (Băng tuyết)',
+    'sunset': 'Fiery Sunset (Hoàng hôn)',
+    'midnight': 'Celestial (Đêm ngân hà)'
+  },
+  colorTheme: {
+    'cyberpunk': 'Cyberpunk Neon',
+    'eucalyptus': 'Eucalyptus (Gỗ Thẫm)',
+    'sakura': 'Sakura (Gỗ Nâu)',
+    'autumn': 'Autumn (Gỗ Hổ Phách)',
+    'emerald': 'Forest Emerald (Gỗ Rừng)'
+  }
+};
+
 // Render dynamic saved tree card grid from localStorage
 function renderDashboardGrid() {
   const grid = document.getElementById('gardenGrid');
@@ -1152,6 +1255,11 @@ function renderDashboardGrid() {
   savedTrees.reverse().forEach(tree => {
     const card = document.createElement('div');
     card.className = 'tree-card';
+
+    const p = tree.params || {};
+    const shapeLabel = gardenLabelMaps.leafShape[p.leafShape] || p.leafShape || 'Tự động';
+    const leafColorLabel = gardenLabelMaps.leafType[p.leafType] || p.leafType || 'Emerald';
+    const barkColorLabel = gardenLabelMaps.colorTheme[p.colorTheme] || p.colorTheme || 'Forest Emerald';
     
     card.innerHTML = `
       <div class="tree-card-preview">
@@ -1160,6 +1268,13 @@ function renderDashboardGrid() {
       <div class="tree-card-info">
         <div class="tree-card-title">${tree.name}</div>
         <div class="tree-card-meta">${tree.date}</div>
+        
+        <div class="tree-card-params">
+          <div class="param-tag"><span class="tag-icon">🌿</span> <span class="tag-label">Dạng lá:</span> <strong>${shapeLabel}</strong></div>
+          <div class="param-tag"><span class="tag-icon">🎨</span> <span class="tag-label">Màu lá:</span> <strong>${leafColorLabel}</strong></div>
+          <div class="param-tag"><span class="tag-icon">🪵</span> <span class="tag-label">Gốc/cành:</span> <strong>${barkColorLabel}</strong></div>
+        </div>
+
         <div class="tree-card-actions">
           <button class="btn-card-load" onclick="loadSavedTree('${tree.id}')">Xem cây</button>
           <button class="btn-card-delete" onclick="deleteSavedTree('${tree.id}')">Xóa</button>

@@ -208,6 +208,7 @@
             <div class="select-wrapper">
               <select id="leafType">
                 <option value="emerald" selected>Emerald (Xanh ngọc lục bảo)</option>
+                <option value="eucalyptus">Eucalyptus Silver (Lá Bạch Đàn xanh bạc)</option>
                 <option value="sakura">Sakura (Hoa Anh Đào)</option>
                 <option value="autumn">Autumn Maple (Lá phong vàng)</option>
                 <option value="ginkgo">Golden Ginkgo (Lá ngân hạnh vàng)</option>
@@ -224,6 +225,9 @@
             <div class="select-wrapper">
               <select id="leafShape">
                 <option value="auto" selected>✨ Lá ngẫu nhiên</option>
+                <option value="willow">Lá Liễu Rủ (12 Đoạn Trọng Lực)</option>
+                <option value="eucalyptus_long">Lá Bạch Đàn Dài</option>
+                <option value="round">Lá Bạc Hà Tròn</option>
                 <option value="tung_lahan">Lá Tùng La Hán</option>
                 <option value="sakura_leaf">Hoa Anh Đào</option>
                 <option value="pointed">Lá Đỉnh Nhọn</option>
@@ -257,13 +261,13 @@
             <div class="select-wrapper">
               <select id="skyPreset">
                 <option value="none">🖤 Nền đen đặc (Deep Black)</option>
-                <option value="clear_blue" selected>☁️ Trong xanh (Clear Blue)</option>
+                <option value="clear_blue">☁️ Trong xanh (Clear Blue)</option>
                 <option value="sunny">☀️ Nắng rực rỡ (Sunny Rays)</option>
                 <option value="rainy">🌧️ Mưa rào (Rainy Storm)</option>
                 <option value="misty">🌫️ Sương mù (Misty Fog)</option>
                 <option value="sunset">🌅 Hoàng hôn (Sunset Glow)</option>
                 <option value="sunrise">🌄 Bình minh (Sunrise Morning)</option>
-                <option value="starry_night">🌙 Đêm đầy sao (Starry Night)</option>
+                <option value="starry_night" selected>🌙 Đêm đầy sao (Starry Night)</option>
               </select>
             </div>
           </div>
@@ -278,14 +282,15 @@
 
         <!-- Section: Colors -->
         <section class="control-group">
-          <h2>Chủ đề Màu sắc</h2>
+          <h2>Màu Thân Cây</h2>
           <div class="control-item">
             <div class="select-wrapper">
               <select id="colorTheme">
-                <option value="cyberpunk" selected>Cyberpunk Neon</option>
-                <option value="sakura">Sakura Garden</option>
-                <option value="autumn">Golden Autumn</option>
-                <option value="emerald">Forest Emerald</option>
+                <option value="cyberpunk" selected>Cyberpunk Neon (Tím - Hồng)</option>
+                <option value="eucalyptus">Eucalyptus Silver (Xanh Thẫm - Bạc)</option>
+                <option value="sakura">Sakura Garden (Gỗ Nâu - Hồng Đào)</option>
+                <option value="autumn">Golden Autumn (Gỗ Đen - Hổ Phách)</option>
+                <option value="emerald">Forest Emerald (Gỗ Rừng - Lục Bảo)</option>
               </select>
             </div>
           </div>
@@ -372,8 +377,9 @@
     </div>
   </div>
 
-  <!-- Tree Rendering Libraries -->
+  <!-- Tree Rendering Libraries & Physics Engine -->
   <script src="lib/random-engine.js?v=gentle-spin-v1"></script>
+  <script src="lib/verlet.js?v=gentle-spin-v1"></script>
   <script src="lib/fractal-branch-tree.js?v=gentle-spin-v1"></script>
   <script src="lib/barnsley-fern-tree.js?v=gentle-spin-v1"></script>
   <script src="lib/sky-background.js?v=gentle-spin-v1"></script>
